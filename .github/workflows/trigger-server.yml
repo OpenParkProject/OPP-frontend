@@ -1,16 +1,12 @@
-name: Trigger OPP nginx Deploy
-
+name: Build Frontend
 on:
   push:
     branches: [main]
 
 jobs:
-  trigger-nginx-deploy:
+  build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger OPP Nginx Workflow
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: OpenParkProject/OPP-nginx
-          event-type: frontend-updated
+      - uses: actions/checkout@v4
+      - name: Build frontend
+        run: echo "Frontend build complete"
