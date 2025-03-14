@@ -1,4 +1,4 @@
-name: Build Frontend
+name: build-frontend
 on:
   push:
     branches: [main]
@@ -8,5 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build frontend
+      - name: build-frontend
         run: echo "Frontend build complete"
+
+  trigger-nginx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger repository_dispatch in OPP-nginx
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          repository: OpenParkProject/OPP-nginx
+          event-type: frontend-updated
