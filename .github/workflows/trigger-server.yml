@@ -1,16 +1,15 @@
-name: Trigger OPP nginx Deploy
-
+name: trigger-iac
 on:
   push:
     branches: [main]
 
 jobs:
-  trigger-nginx-deploy:
+  trigger-iac:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger OPP Nginx Workflow
+      - name: Trigger repository_dispatch in OPP-IaC
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          repository: OpenParkProject/OPP-nginx
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
+          repository: OpenParkProject/OPP-IaC
           event-type: frontend-updated
