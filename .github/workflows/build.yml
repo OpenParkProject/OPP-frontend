@@ -1,9 +1,17 @@
-name: trigger-iac
+name: build frontend
 on:
   push:
     branches: [main]
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: stub
+        run: echo "stub"
+
   trigger-iac:
     runs-on: ubuntu-latest
     steps:
@@ -12,4 +20,4 @@ jobs:
         with:
           token: ${{ secrets.REPO_DISPATCH_TOKEN }}
           repository: OpenParkProject/OPP-IaC
-          event-type: frontend-updated
+          event-type: OPP-frontend-updated
