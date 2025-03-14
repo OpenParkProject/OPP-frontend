@@ -3,6 +3,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
@@ -17,6 +21,6 @@ jobs:
       - name: Trigger repository_dispatch in OPP-nginx
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           repository: OpenParkProject/OPP-nginx
           event-type: frontend-updated
