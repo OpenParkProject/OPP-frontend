@@ -14,6 +14,7 @@ jobs:
 
   trigger-iac:
     runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Trigger repository_dispatch in OPP-IaC
         uses: peter-evans/repository-dispatch@v3
