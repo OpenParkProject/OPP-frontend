@@ -36,6 +36,11 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  opp_api_client:
+    git:
+      url: https://github.com/OpenParkProject/OPP-common.git
+      ref: dart-dio-client
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
