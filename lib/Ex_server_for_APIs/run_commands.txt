@@ -1,0 +1,2 @@
+cd "C:\Livio\Poli\Magistrale\Second Semester\Project on embedded communication systems\Frontend\OPP-frontend\lib\Ex_server_for_APIs"
+json-server --watch db.json --port 3000

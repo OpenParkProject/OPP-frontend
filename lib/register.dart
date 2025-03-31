@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:plate_ocr/payment.dart';
-import 'theme_notifier.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'theme_notifier.dart';
+import 'package:plate_ocr/payment.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -17,6 +18,75 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmController = TextEditingController();
 
+  bool _isLoading = false;
+
+  Future<void> _registerUser() async {
+    if (_passwordController.text != _confirmController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The passwords do not match.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = 'http://localhost:3000/users';
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _useremailController.text,
+          'username': _usernameController.text,
+          'password': _passwordController.text,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        _showRegistrationSuccessDialog();
+      } else {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: ${responseBody['message']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error connecting to server: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showRegistrationSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Registration Success'),
+          content: const Text('Your account has been successfully registered!'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ParkingPaymentPage(),
+                  ),
+                );
+              },
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +102,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
             },
           ),
         ],
-
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -66,6 +135,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       child: TextField(
                         controller: _passwordController,
                         decoration: const InputDecoration(labelText: 'Password'),
+                        obscureText: true,
                       ),
                     ),
                     SizedBox(
@@ -73,44 +143,26 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       child: TextField(
                         controller: _confirmController,
                         decoration: const InputDecoration(labelText: 'Confirm your password'),
+                        obscureText: true,
                       ),
                     ),
+                    const SizedBox(height: 10),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                         elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () async {
-                        String password = _passwordController.text;
-                        String confirm = _confirmController.text;
-
-                        if (password == confirm) {
-                          try {
-                            _showRegistrationSuccessDialog(context);
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Registration failed. Please try again.',
-                                ),
-                              ),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('The passwords do not match.'),
-                            ),
-                          );
-                        }
-                      },
-                      child: Text('Register'),
+                      onPressed: _isLoading ? null : _registerUser,
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text('Register'),
                     ),
                   ],
                 ),
@@ -119,40 +171,6 @@ class _RegistrationPageState extends State<RegistrationPage> {
           ],
         ),
       ),
-    );
-  }
-
-  void _showRegistrationSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Registration Success',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              )),
-          content: Text('Your account has been successfully registered!',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              )),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ParkingPaymentPage(),
-                  ),
-                );
-              },
-              child: Text('Got it',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  )),
-            ),
-          ],
-        );
-      },
     );
   }
 }
