@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'payment.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,56 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  Future<void> _loginUser() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final String apiUrl = 'http://localhost:3000/users';
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        List<dynamic> users = jsonDecode(response.body);
+        
+        // Check username and password correspondance in the db
+        final user = users.firstWhere(
+          (u) => u['username'] == _usernameController.text && u['password'] == _passwordController.text,
+          orElse: () => null,
+        );
+
+        if (user != null) {
+          _showLoginSuccess();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Invalid username or password.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to connect to the server.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showLoginSuccess() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ParkingPaymentPage(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -63,17 +114,17 @@ class _LoginPageState extends State<LoginPage> {
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                         elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
-                        _showLoginSuccess(context);
-                      },
-                      child: const Text('Login'),
+                      onPressed: _isLoading ? null : _loginUser,
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text('Login'),
                     ),
                   ],
                 ),
@@ -81,16 +132,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showLoginSuccess(BuildContext context) async {
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ParkingPaymentPage(),
       ),
     );
   }
