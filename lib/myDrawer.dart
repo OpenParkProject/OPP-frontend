@@ -1,10 +1,12 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:plate_ocr/payment.dart';
+import 'package:plate_ocr/settings.dart';
 import 'package:plate_ocr/theme_notifier.dart';
 import 'license_plate.dart';
 import 'main.dart';
-import 'package:google_fonts/google_fonts.dart';
+//import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -30,7 +32,7 @@ class MyDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: CircleAvatar(
-              child: Icon(Icons.monitor, color: Theme.of(context).iconTheme.color),
+              child: Icon(Icons.car_crash, color: Theme.of(context).iconTheme.color),
             ),
             title: Text("Car's data",
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -40,7 +42,7 @@ class MyDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => Counter(title: "0"),
+                  builder: (context) => ParkingPaymentPage(),
                 ),
               );
             },
@@ -57,7 +59,7 @@ class MyDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => Counter(title: "0")),
+                MaterialPageRoute(builder: (context) => UserProfilePage()),
               );
             },
           ),
@@ -73,7 +75,7 @@ class MyDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => Counter(title: "0")),
+                MaterialPageRoute(builder: (context) => HomePage()),
               );
             },
           ),

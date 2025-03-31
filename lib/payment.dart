@@ -1,24 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:plate_ocr/myDrawer.dart';
+import 'settings.dart';
 
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Parking Payment',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const ParkingPaymentPage(),
-    );
-  }
-}
 
 class ParkingPaymentPage extends StatefulWidget {
   const ParkingPaymentPage({super.key});
@@ -29,7 +13,8 @@ class ParkingPaymentPage extends StatefulWidget {
 
 class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
   String selectedPaymentMethod = 'PayPal';
-  final List<String> paymentMethods = ['PayPal', 'GooglePay', 'Credit Card', 'Satispay'];
+
+  final List<String> paymentMethods = ['PayPal', 'GooglePay', 'ApplePay','Satispay', 'Credit Card'];
   String location = 'Getting location...';
 
   @override
@@ -77,43 +62,64 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: MyDrawer(),
       appBar: AppBar(title: const Text('Parking Payment')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
-            const Text('Parking Lot Location:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(location, style: const TextStyle(fontSize: 16)),
+            ListTile(
+              leading: const Icon(Icons.location_on),
+              title: const Text('Parking Lot Location:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: Text(location, style: const TextStyle(fontSize: 16)),
+            ),
             const SizedBox(height: 16),
-
-            const Text('License plate information:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text('CD5678', style: TextStyle(fontSize: 16)),
+            ListTile(
+              leading: const Icon(Icons.car_rental),
+              title: const Text('Car Information:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Text('Brand: Toyota', style: TextStyle(fontSize: 16)),
+                  const Text('Model: Corolla', style: TextStyle(fontSize: 16)),
+                  const Text('Plate Number: 粤A12345', style: TextStyle(fontSize: 16)),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
-
-            const Text('Parking Times and Prices:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Text('Parking time:2h', style: TextStyle(fontSize: 16)),
-            const Text('Fees payable:€20.00', style: TextStyle(fontSize: 16, color: Colors.red)),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('Parking Time:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: const Text('Parking time:2h', style: TextStyle(fontSize: 16)),
+            ),
+            ListTile(
+              leading: const Icon(Icons.price_check),
+              title: const Text('Parking Price', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: Text('Fees payable:€20.00', style: const TextStyle(fontSize: 16, color: Colors.red)),
+            ),
             const SizedBox(height: 16),
-
-            const Text('Select payment method:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-              value: selectedPaymentMethod,
-              items: paymentMethods.map((String method) {
-                return DropdownMenuItem<String>(
-                  value: method,
-                  child: Text(method),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  selectedPaymentMethod = newValue!;
-                });
-              },
+            ListTile(
+              leading: const Icon(Icons.payment),
+              title: const Text('Payment Method:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              subtitle: DropdownButton<String>(
+                value: selectedPaymentMethod,
+                items: paymentMethods.map((String method) {
+                  return DropdownMenuItem<String>(
+                    value: method,
+                    child: Text(method),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    selectedPaymentMethod = newValue!;
+                  });
+                },
+              ),
             ),
 
-            const Spacer(),
 
+            const Spacer(),
+            const SizedBox(height: 290),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

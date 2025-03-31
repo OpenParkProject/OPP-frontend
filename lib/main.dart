@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:plate_ocr/login.dart';
+import 'package:plate_ocr/register.dart';
 import 'license_plate.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
@@ -101,7 +103,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PlateScannerScreen()),
+                              MaterialPageRoute(builder: (context) => LoginPage()),
                             );
                           },
                           child: const Text('Login'),
@@ -123,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PlateScannerScreen()),
+                              MaterialPageRoute(builder: (context) => RegistrationPage()),
                             );
                           },
                           child: const Text('Register'),
