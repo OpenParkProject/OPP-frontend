@@ -4,6 +4,8 @@ import 'package:plate_ocr/register.dart';
 import 'license_plate.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
+import 'package:opp_api_client/opp_api_client.dart';
+
 void main() {
   runApp(const MyApp());
 }

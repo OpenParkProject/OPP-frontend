@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'theme_notifier.dart';
 import 'package:plate_ocr/payment.dart';
+import 'theme_notifier.dart';
+import 'package:opp_api_client/opp_api_client.dart';
+import 'package:dio/dio.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -20,6 +22,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   bool _isLoading = false;
 
+  // Istantiate Dio 
+  final API = OppApiClient(dio: Dio(BaseOptions(baseUrl: "http://10.0.2.2:10020/api/v1/")));
+
+
   Future<void> _registerUser() async {
     if (_passwordController.text != _confirmController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -32,35 +38,19 @@ class _RegistrationPageState extends State<RegistrationPage> {
       _isLoading = true;
     });
 
-    final String apiUrl = 'http://localhost:3000/users';
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _useremailController.text,
-          'username': _usernameController.text,
-          'password': _passwordController.text,
-        }),
-      );
+    final UserApi = API.getUserApi();
 
-      if (response.statusCode == 201) {
-        _showRegistrationSuccessDialog();
-      } else {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed: ${responseBody['message']}')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error connecting to server: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    User user = User((b) => b
+      ..name = "Simone"
+      ..surname = "Tollardo"
+      ..email = "simonetollardo@gmail.com"
+      ..password = "password"
+      ..role = UserRoleEnum.driver
+      ..id = 1
+    );
+
+    UserApi.addUser(user: user).then((value) => print(value.statusCode));
+
   }
 
   void _showRegistrationSuccessDialog() {

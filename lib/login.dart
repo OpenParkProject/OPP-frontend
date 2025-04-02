@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'payment.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
+import 'package:opp_api_client/opp_api_client.dart';
+import 'package:dio/dio.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,30 +19,32 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  // Istantiate Dio 
+  final API = OppApiClient(dio: Dio(BaseOptions(baseUrl: "http://localhost:10020/api/v1/")));
+
   Future<void> _loginUser() async {
     setState(() {
       _isLoading = true;
     });
 
+    final SessionApi = API.getSessionApi();
+
+    SessionRequest session = SessionRequest((b) => b
+      ..email = "livio.dad@gmail.com"
+      ..password = "password"
+    );
+
+    SessionApi.login(sessionRequest: session);
+    //.then((value) => {
+    //  if(value.statusCode)
+    //})
+  
     final String apiUrl = 'http://localhost:3000/users';
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
         List<dynamic> users = jsonDecode(response.body);
-        
-        // Check username and password correspondance in the db
-        final user = users.firstWhere(
-          (u) => u['username'] == _usernameController.text && u['password'] == _passwordController.text,
-          orElse: () => null,
-        );
 
-        if (user != null) {
-          _showLoginSuccess();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Invalid username or password.')),
-          );
-        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Failed to connect to the server.')),
