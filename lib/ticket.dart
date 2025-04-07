@@ -7,17 +7,16 @@ class ParkingPage extends StatefulWidget {
 }
 
 class _ParkingPageState extends State<ParkingPage> {
-  final String carNumber = "粤A12345"; // 车辆信息（可替换为动态识别结果）
+  final String carNumber = "BA12345"; // 车辆信息（可替换为动态识别结果）
 
   String? selectedDuration;
   int parkingFee = 0;
 
   final Map<String, int> durationOptions = {
-    '30分钟': 2,
-    '1小时': 4,
-    '2小时': 8,
-    '3小时': 12,
-    '全天': 20,
+    '1h': 4,
+    '2h': 8,
+    '3h': 12,
+    'One Day': 20,
   };
 
   void _onDurationChanged(String? newValue) {
@@ -30,7 +29,7 @@ class _ParkingPageState extends State<ParkingPage> {
   void _onPay() {
     if (selectedDuration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('请先选择停车时间')),
+        SnackBar(content: Text('Choose your parking duration')),
       );
       return;
     }
@@ -51,13 +50,13 @@ class _ParkingPageState extends State<ParkingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('选择停车时间')),
+      appBar: AppBar(title: Text('Choose your parking duration')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             DropdownButton<String>(
-              hint: Text('请选择停车时间'),
+              hint: Text('Choose your parking duration'),
               value: selectedDuration,
               isExpanded: true,
               items: durationOptions.keys.map((String duration) {
@@ -70,13 +69,13 @@ class _ParkingPageState extends State<ParkingPage> {
             ),
             SizedBox(height: 20),
             Text(
-              '停车费用：${parkingFee}元',
+              'Parking fees：${parkingFee}€',
               style: TextStyle(fontSize: 18),
             ),
             Spacer(),
             ElevatedButton(
               onPressed: _onPay,
-              child: Text('支付并生成票据'),
+              child: Text('Pay and get a receipt'),
             ),
           ],
         ),
