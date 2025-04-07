@@ -1,6 +1,9 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:plate_ocr/myDrawer.dart';
+import 'package:plate_ocr/payment_selection.dart';
+import 'package:plate_ocr/ticket.dart';
 import 'settings.dart';
 
 
@@ -73,7 +76,6 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
               title: const Text('Parking Lot Location:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               subtitle: Text(location, style: const TextStyle(fontSize: 16)),
             ),
-            const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.car_rental),
               title: const Text('Car Information:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -82,11 +84,10 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
                 children: <Widget>[
                   const Text('Brand: Toyota', style: TextStyle(fontSize: 16)),
                   const Text('Model: Corolla', style: TextStyle(fontSize: 16)),
-                  const Text('Plate Number: 粤A12345', style: TextStyle(fontSize: 16)),
+                  const Text('Plate Number: AB12345', style: TextStyle(fontSize: 16)),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text('Parking Time:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -97,7 +98,6 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
               title: const Text('Parking Price', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               subtitle: Text('Fees payable:€20.00', style: const TextStyle(fontSize: 16, color: Colors.red)),
             ),
-            const SizedBox(height: 16),
             ListTile(
               leading: const Icon(Icons.payment),
               title: const Text('Payment Method:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -116,7 +116,22 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
                 },
               ),
             ),
-
+            ListTile(
+              leading: Icon(CupertinoIcons.ticket),
+              title: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ParkingPage()),
+                  );
+                },
+                child: const Text("Buy a ticket"),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.payments),
+              title: PaymentSelectionPage(),
+            ),
 
             const Spacer(),
             const SizedBox(height: 290),

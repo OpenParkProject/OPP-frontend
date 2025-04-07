@@ -1,23 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:plate_ocr/payment_selection.dart';
 
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Personal Information Setting',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: UserProfilePage(),
-    );
-  }
-}
 
 class UserProfilePage extends StatefulWidget {
+  const UserProfilePage({super.key});
+
   @override
   _UserProfilePageState createState() => _UserProfilePageState();
 }
@@ -28,8 +15,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _newPlateController = TextEditingController();
   String? _selectedPlate;
 
-  List<String> _licensePlates = [
-    '粤A12345', '沪B67890', '京C54321', '川D98765', '浙E13579'
+  final List<String> _licensePlates = [
+    'BA12345', 'CB67890', 'JC54321', 'CD98765', 'ZE13579'
   ];
 
   void _addLicensePlate() {
@@ -79,42 +66,42 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ),
             ListTile(
               leading: Icon(Icons.car_rental),
-              title: Text('Please select a plate：'),
+              title: DropdownButton<String>(
+                value: _selectedPlate,
+                hint: Text('Select a plate'),
+                isExpanded: true,
+                items: _licensePlates.map((plate) {
+                  return DropdownMenuItem(
+                    value: plate,
+                    child: Row(
+                      //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(plate),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removeLicensePlate(plate),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedPlate = newValue;
+                  });
+                },
+              ),
             ),
-            DropdownButton<String>(
-              value: _selectedPlate,
-              hint: Text('Please select a plate'),
-              isExpanded: true,
-              items: _licensePlates.map((plate) {
-                return DropdownMenuItem(
-                  value: plate,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(plate),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _removeLicensePlate(plate),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedPlate = newValue;
-                });
-              },
-            ),
+
             ListTile(
-              leading: Icon(Icons.add),
+              leading: Icon(Icons.add_circle),
               title: TextField(
                 controller: _newPlateController,
                 decoration: InputDecoration(labelText: 'Add a new plate'),
               ),
               trailing: ElevatedButton(
                 onPressed: _addLicensePlate,
-                child: Text('Add'),
+                child: Icon(Icons.add),
               ),
             ),
             ElevatedButton(

@@ -1,10 +1,10 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
-import 'package:plate_ocr/payment.dart';
+import 'package:plate_ocr/parking_info.dart';
 import 'package:plate_ocr/settings.dart';
 import 'package:plate_ocr/theme_notifier.dart';
-import 'license_plate.dart';
+import 'plate_scan.dart';
 import 'main.dart';
 //import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';

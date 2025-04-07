@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'payment.dart';
+import 'parking_info.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
 import 'package:opp_api_client/opp_api_client.dart';

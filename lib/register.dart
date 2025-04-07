@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
-import 'package:plate_ocr/payment.dart';
+import 'package:plate_ocr/parking_info.dart';
 import 'theme_notifier.dart';
 import 'package:opp_api_client/opp_api_client.dart';
 import 'package:dio/dio.dart';

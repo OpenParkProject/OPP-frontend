@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:plate_ocr/main.dart';
 import 'package:plate_ocr/myDrawer.dart';
-import 'package:plate_ocr/payment.dart';
+import 'package:plate_ocr/parking_info.dart';
 
 class PlateScannerScreen extends StatefulWidget {
   const PlateScannerScreen({super.key});
