@@ -17,7 +17,7 @@ class ParkingPaymentPage extends StatefulWidget {
 class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
   String selectedPaymentMethod = 'PayPal';
 
-  final List<String> paymentMethods = ['PayPal', 'GooglePay', 'ApplePay','Satispay', 'Credit Card'];
+  final List<String> paymentMethods = ['PayPal', 'GooglePay', 'ApplePay', 'Credit Card'];
   String location = 'Getting location...';
 
   @override
@@ -84,7 +84,7 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
                 children: <Widget>[
                   const Text('Brand: Toyota', style: TextStyle(fontSize: 16)),
                   const Text('Model: Corolla', style: TextStyle(fontSize: 16)),
-                  const Text('Plate Number: AB12345', style: TextStyle(fontSize: 16)),
+                  const Text('Plate Number: 粤A12345', style: TextStyle(fontSize: 16)),
                 ],
               ),
             ),
@@ -99,7 +99,31 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
               subtitle: Text('Fees payable:€20.00', style: const TextStyle(fontSize: 16, color: Colors.red)),
             ),
             ListTile(
-              leading: const Icon(Icons.payment),
+              leading: Icon(Icons.payments),
+              title: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => PaymentSelectionPage()),
+                  );
+                },
+                child: const Text("Pay"),
+              ),
+            ),
+            ListTile(
+              leading: Icon(CupertinoIcons.ticket),
+              title: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => ParkingPage()),
+                  );
+                },
+                child: const Text("Buy a ticket"),
+              ),
+            ),
+            /*ListTile(
+              leading: const Icon(Icons.payments),
               title: const Text('Payment Method:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               subtitle: DropdownButton<String>(
                 value: selectedPaymentMethod,
@@ -116,25 +140,6 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
                 },
               ),
             ),
-            ListTile(
-              leading: Icon(CupertinoIcons.ticket),
-              title: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ParkingPage()),
-                  );
-                },
-                child: const Text("Buy a ticket"),
-              ),
-            ),
-            ListTile(
-              leading: Icon(Icons.payments),
-              title: PaymentSelectionPage(),
-            ),
-
-            const Spacer(),
-            const SizedBox(height: 290),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -145,7 +150,7 @@ class _ParkingPaymentPageState extends State<ParkingPaymentPage> {
                 },
                 child: const Text('Payment', style: TextStyle(fontSize: 18)),
               ),
-            ),
+            ),*/
           ],
         ),
       ),

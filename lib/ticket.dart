@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plate_ocr/payment_selection.dart';
 import 'receipt.dart'; // 引入票据页面
 
 class ParkingPage extends StatefulWidget {
@@ -38,6 +39,15 @@ class _ParkingPageState extends State<ParkingPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
+        builder: (context) => PaymentSelectionPage(),
+      ),
+    );
+  }
+
+  void _onPayed() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
         builder: (context) => ReceiptPage(
           carNumber: carNumber,
           duration: selectedDuration!,
@@ -72,6 +82,7 @@ class _ParkingPageState extends State<ParkingPage> {
               'Parking fees：${parkingFee}€',
               style: TextStyle(fontSize: 18),
             ),
+            ElevatedButton(onPressed: _onPayed, child: Text("Check your ticket")),
             Spacer(),
             ElevatedButton(
               onPressed: _onPay,
