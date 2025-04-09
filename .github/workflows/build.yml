@@ -3,16 +3,40 @@ name: Flutter Build
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.generate_tag.outputs.TAG_NAME }}
+      date: ${{ steps.generate_tag.outputs.DATE }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Generate tag name
+        id: generate_tag
+        run: |
+          DATE=$(date +'%Y%m%d')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          TAG_NAME="v${DATE}-${SHORT_SHA}"
+          echo "DATE=${DATE}" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_OUTPUT
+  
   build:
+    needs: create-tag
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-
+      
+      - name: Set tag name
+        run: |
+          echo "TAG_NAME=${{ needs.create-tag.outputs.tag_name }}" >> $GITHUB_ENV
+          echo "DATE=${{ needs.create-tag.outputs.date }}" >> $GITHUB_ENV
+      
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -41,8 +65,16 @@ jobs:
       - name: Build Linux
         run: flutter build linux --release
 
+      - name: Package Linux build
+        run: |
+          tar -czf opp-linux-${{ env.TAG_NAME }}.tar.gz -C build/linux/x64/release/bundle/ .
+
       - name: Build Web
         run: flutter build web --release
+
+      - name: Package Web build
+        run: |
+          tar -czf opp-web-${{ env.TAG_NAME }}.tar.gz -C build/web/ .
         
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -56,27 +88,63 @@ jobs:
       - name: Build Android APK
         run: flutter build apk --release
 
+      - name: Package Android APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk opp-android-${{ env.TAG_NAME }}.apk
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: flutter-builds
           path: |
-            build/linux/**/release/**
-            build/web/**
-            build/app/outputs/flutter-apk/app-release.apk
+            opp-linux-${{ env.TAG_NAME }}.tar.gz
+            opp-web-${{ env.TAG_NAME }}.tar.gz
+            opp-android-${{ env.TAG_NAME }}.apk
           if-no-files-found: warn
 
   release:
-    needs: build
+    needs: [create-tag, build]
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set tag name
+        run: |
+          echo "TAG_NAME=${{ needs.create-tag.outputs.tag_name }}" >> $GITHUB_ENV
+          echo "DATE=${{ needs.create-tag.outputs.date }}" >> $GITHUB_ENV
+
       - uses: actions/download-artifact@v4
         with:
           name: flutter-builds
           path: artifacts/
 
+      - name: Create Git tag
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag ${{ env.TAG_NAME }}
+          git push origin ${{ env.TAG_NAME }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**
+          files: |
+            artifacts/opp-linux-${{ env.TAG_NAME }}.tar.gz
+            artifacts/opp-web-${{ env.TAG_NAME }}.tar.gz
+            artifacts/opp-android-${{ env.TAG_NAME }}.apk
+          tag_name: ${{ env.TAG_NAME }}
+          name: "Build ${{ env.DATE }}"
+
+  trigger-iac:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger repository_dispatch in OPP-IaC
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.REPO_DISPATCH_TOKEN }}
+          repository: OpenParkProject/OPP-IaC
+          event-type: frontend-updated
