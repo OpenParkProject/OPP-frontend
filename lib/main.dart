@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
-import 'license_plate.dart';
+import 'package:opp_frontend/login.dart';
+import 'package:opp_frontend/register.dart';
+import 'plate_scan.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -101,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PlateScannerScreen()),
+                              MaterialPageRoute(builder: (context) => LoginPage()),
                             );
                           },
                           child: const Text('Login'),
@@ -123,7 +131,7 @@ class _HomePageState extends State<HomePage> {
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => PlateScannerScreen()),
+                              MaterialPageRoute(builder: (context) => RegistrationPage()),
                             );
                           },
                           child: const Text('Register'),

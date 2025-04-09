@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:opp_frontend/myDrawer.dart';
-import 'package:opp_frontend/payment.dart';
+import 'package:opp_frontend/parking_info.dart';
 
 class PlateScannerScreen extends StatefulWidget {
   const PlateScannerScreen({super.key});
