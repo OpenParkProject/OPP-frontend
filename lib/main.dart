@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:opp_frontend/login.dart';
 import 'package:opp_frontend/register.dart';
-import 'plate_scan.dart';
 import 'package:provider/provider.dart';
 import 'theme_notifier.dart';
 
@@ -137,27 +136,6 @@ class _HomePageState extends State<HomePage> {
                           child: const Text('Register'),
                         ),
                         const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: Size(200, 50),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => PlateScannerScreen()),
-                            );
-                          },
-                          child: const Text('Continue as Guest'),
-                        ),
                       ],
                     ),
                   ),
