@@ -1,4 +1,4 @@
-# plate_ocr
+# mockup_frontend
 
 A new Flutter project.
 

@@ -1,4 +1,4 @@
-package com.example.plate_ocr
+package com.example.mockup_frontend
 
 import io.flutter.embedding.android.FlutterActivity
 

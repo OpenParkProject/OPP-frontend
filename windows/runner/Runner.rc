@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "plate_ocr" "\0"
+            VALUE "FileDescription", "mockup_frontend" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "plate_ocr" "\0"
+            VALUE "InternalName", "mockup_frontend" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "plate_ocr.exe" "\0"
-            VALUE "ProductName", "plate_ocr" "\0"
+            VALUE "OriginalFilename", "mockup_frontend.exe" "\0"
+            VALUE "ProductName", "mockup_frontend" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
