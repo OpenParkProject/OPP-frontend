@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
-import '../db/db_zones.dart';
 import 'package:intl/intl.dart';
+import '../db/db_zones.dart';
+import '../db/db_tickets.dart';
 
 class ParkingPaymentPage extends StatelessWidget {
   final ParkingZone zone;
   final double duration;
   final String plate;
   final double totalCost;
+  final String? userEmail;
 
   const ParkingPaymentPage({
+    super.key,
     required this.zone,
     required this.duration,
     required this.plate,
     required this.totalCost,
-    super.key,
+    this.userEmail,
   });
 
   @override
@@ -45,8 +48,23 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Total: €${(totalCost * 1.0825).toStringAsFixed(2)}", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                 SizedBox(height: 30),
                 ElevatedButton.icon(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Payment confirmed ✅")));
+                  onPressed: () async {
+                    final now = DateTime.now();
+                    final ticket = Ticket(
+                      email: userEmail ?? "",
+                      plate: plate,
+                      zone: zone.name,
+                      hourlyRate: zone.hourlyRate,
+                      startTime: now,
+                      endTime: now.add(Duration(minutes: duration.round())),
+                      amount: totalCost,
+                    );
+
+                    await TicketDB.saveTicket(ticket);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Payment confirmed ✅")),
+                    );
                     Navigator.popUntil(context, (route) => route.isFirst);
                   },
                   icon: Icon(Icons.check_circle),
