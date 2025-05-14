@@ -50,21 +50,20 @@ class _UserHomePageState extends State<UserHomePage> {
                   child: ListView.builder(
                     itemCount: userTickets.length,
                     itemBuilder: (context, index) {
-                      final ticket = userTickets[index];
+                      final t = userTickets[index];
                       return Card(
                         margin: EdgeInsets.symmetric(vertical: 8),
+                        elevation: 3,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
-                          title: Text("${ticket.plate} – ${ticket.zone}"),
+                          title: Text("${t.plate} – ${t.zone}"),
                           subtitle: Text(
-                            "From: ${ticket.startTime}\nTo: ${ticket.endTime}\n€${ticket.amount.toStringAsFixed(2)}",
-                          ),
+                              "From: ${_formatDateTime(t.startTime)}\nTo: ${_formatDateTime(t.endTime)}\n€ ${t.amount.toStringAsFixed(2)}"),
                           trailing: ElevatedButton(
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => ExtendTicketPage(ticket: ticket),
-                                ),
+                                MaterialPageRoute(builder: (_) => ExtendTicketPage(ticket: t)),
                               );
                             },
                             child: Text("Extend"),
@@ -72,8 +71,8 @@ class _UserHomePageState extends State<UserHomePage> {
                         ),
                       );
                     },
-                  )
                   ),
+                ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () {

@@ -65,7 +65,6 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                     email: widget.ticket.email,
                     plate: widget.ticket.plate,
                     zone: widget.ticket.zone,
-                    hourlyRate: widget.ticket.hourlyRate,
                     startTime: widget.ticket.startTime,
                     endTime: newEnd,
                     amount: widget.ticket.amount + extraCost,

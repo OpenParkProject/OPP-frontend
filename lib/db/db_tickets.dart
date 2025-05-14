@@ -2,10 +2,9 @@ import 'dart:io';
 import 'package:intl/intl.dart';
 
 class Ticket {
-  final String email;       // può essere ""
+  final String email;
   final String plate;
   final String zone;
-  final double hourlyRate;
   final DateTime startTime;
   final DateTime endTime;
   double amount;
@@ -14,31 +13,28 @@ class Ticket {
     required this.email,
     required this.plate,
     required this.zone,
-    required this.hourlyRate,
     required this.startTime,
     required this.endTime,
     required this.amount,
   });
 
   List<String> toCsvRow() => [
-    email,
-    plate,
-    zone,
-    hourlyRate.toStringAsFixed(2),
-    startTime.toIso8601String(),
-    endTime.toIso8601String(),
-    amount.toStringAsFixed(2),
-  ];
+        email,
+        plate,
+        zone,
+        startTime.toIso8601String(),
+        endTime.toIso8601String(),
+        amount.toStringAsFixed(2),
+      ];
 
   static Ticket fromCsv(List<String> row) {
     return Ticket(
       email: row[0],
       plate: row[1],
       zone: row[2],
-      hourlyRate: double.parse(row[3]),
-      startTime: DateTime.parse(row[4]),
-      endTime: DateTime.parse(row[5]),
-      amount: double.parse(row[6]),
+      startTime: DateTime.parse(row[3]),
+      endTime: DateTime.parse(row[4]),
+      amount: double.parse(row[5]),
     );
   }
 }
@@ -64,7 +60,7 @@ class TicketDB {
   static Future<void> saveTicket(Ticket ticket) async {
     final file = File(path);
     if (!await file.exists()) {
-      await file.writeAsString('email,plate,zone,hourly_rate,start_time,end_time,amount\n');
+      await file.writeAsString('email,plate,zone,start_time,end_time,amount\n');
     }
     final line = ticket.toCsvRow().join(',') + '\n';
     await file.writeAsString(line, mode: FileMode.append);
