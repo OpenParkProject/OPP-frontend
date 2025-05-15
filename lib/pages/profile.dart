@@ -15,7 +15,7 @@ class ProfilePage extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(radius: 30, backgroundImage: AssetImage('assets/avatar.png')), // metti immagine dummy in assets
+              CircleAvatar(radius: 30, backgroundImage: AssetImage('assets/images/avatar.png')),
               SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../db/db_users.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterPlatePage extends StatefulWidget {
   final String userEmail;
@@ -12,13 +13,58 @@ class RegisterPlatePage extends StatefulWidget {
 class _RegisterPlatePageState extends State<RegisterPlatePage> {
   final _plateController = TextEditingController();
   final _modelController = TextEditingController();
-  final _nameController = TextEditingController();
+  final _brandController = TextEditingController();
+
+  List<String> userPlates = [];
+  String? _feedbackMessage;
+
+  Future<void> _addCar() async {
+    final plate = _plateController.text.trim().toUpperCase();
+    final model = _modelController.text.trim();
+    final brand = _brandController.text.trim();
+
+    if (plate.isEmpty || brand.isEmpty || model.isEmpty) {
+      setState(() => _feedbackMessage = "❗ Please fill all fields.");
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      final dio = Dio(BaseOptions(baseUrl: "http://openpark.com/api/v1"));
+
+      await dio.post(
+        "/users/me/cars",
+        data: {
+          "plate": plate,
+          "brand": brand,
+          "model": model,
+        },
+        options: Options(headers: {
+          "Authorization": "Bearer $token",
+          "Content-Type": "application/json",
+        }),
+      );
+
+      setState(() {
+        userPlates.add(plate);
+        _feedbackMessage = "✅ Vehicle $plate registered successfully.";
+        _plateController.clear();
+        _brandController.clear();
+        _modelController.clear();
+      });
+    } catch (e) {
+      String msg = "❌ Failed to register vehicle.";
+      if (e is DioException && e.response?.data is Map) {
+        final data = e.response?.data;
+        msg = "❌ ${data?['error'] ?? data?['detail'] ?? 'Unknown error'}";
+      }
+      setState(() => _feedbackMessage = msg);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final db = MockDB();
-    final userPlates = db.getUserPlates(widget.userEmail);
-
     return Scaffold(
       appBar: AppBar(title: Text("My Vehicles")),
       body: Padding(
@@ -27,51 +73,25 @@ class _RegisterPlatePageState extends State<RegisterPlatePage> {
           children: [
             if (userPlates.isNotEmpty) ...[
               Text("Registered Plates:", style: TextStyle(fontWeight: FontWeight.bold)),
-              ...userPlates.map((plate) => ListTile(
-                    title: Text(plate),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () {
-                        db.removePlate(widget.userEmail, plate);
-                        setState(() {});
-                      },
-                    ),
-                  )),
+              ...userPlates.map((plate) => ListTile(title: Text(plate))),
               Divider(),
             ],
             Text("Add a new vehicle"),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: "Vehicle Name")),
+            TextField(controller: _brandController, decoration: InputDecoration(labelText: "Brand")),
             TextField(controller: _plateController, decoration: InputDecoration(labelText: "License Plate")),
             TextField(controller: _modelController, decoration: InputDecoration(labelText: "Model")),
             SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
-                if (_plateController.text.isNotEmpty) {
-                  db.addPlate(widget.userEmail, _plateController.text.trim());
-                  _plateController.clear();
-                  _nameController.clear();
-                  _modelController.clear();
-                  setState(() {});
-                }
-              },
+              onPressed: _addCar,
               child: Text("Add Vehicle"),
             ),
+            if (_feedbackMessage != null) ...[
+              SizedBox(height: 20),
+              Text(_feedbackMessage!, style: TextStyle(color: Colors.blue)),
+            ],
           ],
         ),
       ),
     );
   }
-}
-
-class Vehicle {
-  final String name;
-  final String plate;
-  final String model;
-
-  Vehicle({required this.name, required this.plate, required this.model});
-
-  List<String> toCsvRow(String email) => [email, plate, name, model];
-
-  static Vehicle fromCsv(List<String> row) =>
-      Vehicle(plate: row[1], name: row[2], model: row[3]);
 }

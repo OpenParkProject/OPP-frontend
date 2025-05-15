@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../db/db_users.dart';
 import 'controller_home.dart';
 import 'main_user_home.dart';
 import 'parking_zone_selection.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -14,41 +15,143 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _usernameController = TextEditingController();
 
-  void _showMessage(String text) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  final Dio _dio = Dio(BaseOptions(baseUrl: "http://openpark.com/api/v1"));
+
+  void _showMessage(String text, {Color background = Colors.black}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: background,
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
-  void _handleAuth() {
-    final email = _emailController.text.trim();
+  void _handleAuth() async {
+    final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    final db = MockDB();
+    
 
     if (isSignIn) {
-      if (email == "controller") {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => ControllerHome()));
+      try {
+        final response = await _dio.post('/login', data: {
+          'username': username,
+          'password': password,
+        });
+
+        final user = response.data['user'];
+        final role = user['username'] == 'controller' ? 'controller' : 'driver';
+        final token = response.data['access_token'];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('access_token', token);
+        print("Token saved: $token");
+
+        _showMessage("Login successful: Welcome, ${user['username']}!");
+        // To retrieve the token in every page or file:
+        // final prefs = await SharedPreferences.getInstance();
+        // final token = prefs.getString('access_token');
+        // print("Token recuperato: $token");
+
+
+        if (role == 'controller') {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerHome()));
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MainUserHomePage(username: user['username']),
+            ),
+          );
+        }
+      } catch (e) {
+      if (e is DioException) {
+        print("Error: ${e.response?.data}");
+        final errorData = e.response?.data;
+        String errorMsg;
+
+        if (errorData is Map<String, dynamic>) {
+          if (errorData.containsKey('detail')) {
+            errorMsg = errorData['detail'];
+          } else if (errorData.containsKey('error')) {
+            errorMsg = errorData['error'];
+          } else {
+            errorMsg = errorData.values.join(", ");
+          }
+        } else {
+          errorMsg = 'Unknown error';
+        }
+
+        _showMessage("Login failed: $errorMsg");
+      } else {
+        _showMessage("Login failed: ${e.toString()}");
+      }
+    }
+
+    } else {
+      final confirm = _confirmPasswordController.text.trim();
+      final name = _nameController.text.trim();
+      final surname = _surnameController.text.trim();
+      final username = _usernameController.text.trim();
+      final email = _emailController.text.trim();
+
+      if ([name, surname, username, email, password, confirm].any((e) => e.isEmpty)) {
+        _showMessage("Please fill in all fields");
         return;
       }
 
-      if (db.loginUser(email, password)) {
-        Navigator.pushReplacement(
-            context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: email)));
-      } else {
-        _showMessage("Invalid credentials");
-      }
-    } else {
-      final confirm = _confirmPasswordController.text.trim();
       if (password != confirm) {
         _showMessage("Passwords do not match");
         return;
       }
-      if (db.registerUser(email, password)) {
+
+      try {
+        await _dio.post(
+          '/register',
+          data: {
+            "name": name,
+            "surname": surname,
+            "username": username,
+            "email": email,
+            "password": password,
+            "role": "driver"
+          },
+          options: Options(
+            headers: {
+              "Content-Type": "application/json",
+            },
+          ),
+        );
+
         _showMessage("Account created, you can now sign in");
         setState(() {
           isSignIn = true;
         });
-      } else {
-        _showMessage("User already exists");
+      } catch (e) {
+        if (e is DioException) {
+          print("Error: ${e.response?.data}");
+          final errorData = e.response?.data;
+          String errorMsg;
+
+          if (errorData is Map<String, dynamic>) {
+            if (errorData.containsKey('detail')) {
+              errorMsg = errorData['detail'];
+            } else if (errorData.containsKey('error')) {
+              errorMsg = errorData['error'];
+            } else {
+              errorMsg = errorData.values.join(", ");
+            }
+          } else {
+            errorMsg = 'Unknown error';
+          }
+
+          _showMessage("Registration failed: $errorMsg");
+        } else {
+          _showMessage("Registration failed: ${e.toString()}");
+        }
       }
     }
   }
@@ -67,7 +170,7 @@ class _LoginPageState extends State<LoginPage> {
           Container(),
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 170), // This lines moves the block down to show the logo on the background
+              padding: const EdgeInsets.only(top: 170),
               child: Card(
                 color: Colors.white.withOpacity(0.9),
                 elevation: 8,
@@ -93,8 +196,8 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       SizedBox(height: 20),
                       TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(labelText: "Email", border: OutlineInputBorder()),
+                        controller: isSignIn ? _usernameController : _emailController,
+                        decoration: InputDecoration(labelText: isSignIn ? "Username" : "Email", border: OutlineInputBorder()),
                       ),
                       SizedBox(height: 10),
                       TextField(
@@ -108,6 +211,21 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _confirmPasswordController,
                           obscureText: true,
                           decoration: InputDecoration(labelText: "Confirm Password", border: OutlineInputBorder()),
+                        ),
+                        SizedBox(height: 10),
+                        TextField(
+                          controller: _nameController,
+                          decoration: InputDecoration(labelText: "Name", border: OutlineInputBorder()),
+                        ),
+                        SizedBox(height: 10),
+                        TextField(
+                          controller: _surnameController,
+                          decoration: InputDecoration(labelText: "Surname", border: OutlineInputBorder()),
+                        ),
+                        SizedBox(height: 10),
+                        TextField(
+                          controller: _usernameController,
+                          decoration: InputDecoration(labelText: "Username", border: OutlineInputBorder()),
                         ),
                       ],
                       SizedBox(height: 20),

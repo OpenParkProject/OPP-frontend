@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../db/db_zones.dart';
 import '../db/db_users.dart';
-import 'parking_summary.dart';
+import 'parking_submit_ticket.dart';
 
 class ParkingDurationPage extends StatefulWidget {
   final ParkingZone zone;
@@ -77,10 +77,10 @@ class _ParkingDurationPageState extends State<ParkingDurationPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ParkingSummaryPage(
-                      zone: widget.zone,
-                      durationMinutes: durationInMinutes,
-                      plate: selectedPlate!,
+                    builder: (_) => ParkingSubmitTicketPage(
+                      plate: selectedPlate!, // assicurati che non sia null
+                      duration: durationInMinutes.toInt(), // usa il valore già presente
+                      startDate: DateTime.now(),
                     ),
                   ),
                 );
