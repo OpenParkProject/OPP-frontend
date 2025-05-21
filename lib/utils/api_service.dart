@@ -10,7 +10,7 @@ class ApiService {
     T Function(Map<String, dynamic>) fromJson,
   ) async {
     final uri = Uri.parse(url);
-    final response = await http.get(uri, headers: oppHeaders());
+    final response = await http.get(uri, headers: authHeaders());
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -28,7 +28,7 @@ class ApiService {
     final uri = Uri.parse(url);
     final response = await http.post(
       uri,
-      headers: oppHeaders(),
+      headers: authHeaders(),
       body: jsonEncode(toJson(model)),
     );
 
@@ -47,7 +47,7 @@ class ApiService {
     final uri = Uri.parse('$url/$id');
     final response = await http.patch(
       uri,
-      headers: oppHeaders(),
+      headers: authHeaders(),
       body: jsonEncode(updateData),
     );
 
@@ -62,7 +62,7 @@ class ApiService {
 
   static Future<String> deleteObject(String url, String id) async {
     final uri = Uri.parse('$url/$id');
-    final response = await http.delete(uri, headers: oppHeaders());
+    final response = await http.delete(uri, headers: authHeaders());
 
     if (response.statusCode == 200) {
       return response.body;
