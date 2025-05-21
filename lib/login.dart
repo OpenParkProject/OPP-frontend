@@ -57,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const ControllerHomePage(),
+              builder: (_) => ControllerLayout(username: user['username']),
             ),
           );
         } else {
