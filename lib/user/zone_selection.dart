@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../db/db_zones.dart';
-import 'parking_duration.dart';
+import 'my_cars.dart';
+import 'create_ticket.dart';
 
 class ParkingZoneSelectionPage extends StatefulWidget {
   @override
@@ -65,7 +66,20 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
     return Scaffold(
       appBar: AppBar(title: Text('Select Parking Zone')),
       body: userLat == null || userLong == null
-          ? Center(child: CircularProgressIndicator())
+          ? Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text(
+                  "Determining your position to find nearby parking zones...",
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
           : Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -89,10 +103,20 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (_) => ParkingDurationPage(zone: zone),
+                                builder: (_) => MyCarsPage(
+                                  onPlateSelected: (plate) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SelectDurationPage(plate: plate),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             );
                           },
+
                         );
                       },
                     ),

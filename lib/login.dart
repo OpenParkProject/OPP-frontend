@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'controller_home.dart';
-import 'main_user_home.dart';
-import 'parking_zone_selection.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'user/layout.dart';
+import 'user/zone_selection.dart';
+import 'package:dio/dio.dart';
+import 'singleton/dio_client.dart';
+import 'controller/layout.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -19,8 +20,6 @@ class _LoginPageState extends State<LoginPage> {
   final _surnameController = TextEditingController();
   final _usernameController = TextEditingController();
 
-  final Dio _dio = Dio(BaseOptions(baseUrl: "http://openpark.com/api/v1"));
-
   void _showMessage(String text, {Color background = Colors.black}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -34,31 +33,33 @@ class _LoginPageState extends State<LoginPage> {
   void _handleAuth() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
-    
+    final dio = DioClient().dio;
 
     if (isSignIn) {
       try {
-        final response = await _dio.post('/login', data: {
+        final response = await dio.post('/login', data: {
           'username': username,
           'password': password,
         });
 
         final user = response.data['user'];
-        final role = user['username'] == 'controller' ? 'controller' : 'driver';
+        final role = user['role'];
         final token = response.data['access_token'];
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', token);
-        print("Token saved: $token");
+
+        await DioClient().setAuthToken(); // imposta il token nel client Dio
 
         _showMessage("Login successful: Welcome, ${user['username']}!");
-        // To retrieve the token in every page or file:
-        // final prefs = await SharedPreferences.getInstance();
-        // final token = prefs.getString('access_token');
-        // print("Token recuperato: $token");
-
 
         if (role == 'controller') {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerHome()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ControllerHomePage(),
+            ),
+          );
         } else {
           Navigator.pushReplacement(
             context,
@@ -67,35 +68,14 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         }
+
       } catch (e) {
-      if (e is DioException) {
-        print("Error: ${e.response?.data}");
-        final errorData = e.response?.data;
-        String errorMsg;
-
-        if (errorData is Map<String, dynamic>) {
-          if (errorData.containsKey('detail')) {
-            errorMsg = errorData['detail'];
-          } else if (errorData.containsKey('error')) {
-            errorMsg = errorData['error'];
-          } else {
-            errorMsg = errorData.values.join(", ");
-          }
-        } else {
-          errorMsg = 'Unknown error';
-        }
-
-        _showMessage("Login failed: $errorMsg");
-      } else {
-        _showMessage("Login failed: ${e.toString()}");
+        _handleError(e, context: "Login");
       }
-    }
-
     } else {
       final confirm = _confirmPasswordController.text.trim();
       final name = _nameController.text.trim();
       final surname = _surnameController.text.trim();
-      final username = _usernameController.text.trim();
       final email = _emailController.text.trim();
 
       if ([name, surname, username, email, password, confirm].any((e) => e.isEmpty)) {
@@ -109,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       try {
-        await _dio.post(
+        await dio.post(
           '/register',
           data: {
             "name": name,
@@ -119,11 +99,6 @@ class _LoginPageState extends State<LoginPage> {
             "password": password,
             "role": "driver"
           },
-          options: Options(
-            headers: {
-              "Content-Type": "application/json",
-            },
-          ),
         );
 
         _showMessage("Account created, you can now sign in");
@@ -131,29 +106,28 @@ class _LoginPageState extends State<LoginPage> {
           isSignIn = true;
         });
       } catch (e) {
-        if (e is DioException) {
-          print("Error: ${e.response?.data}");
-          final errorData = e.response?.data;
-          String errorMsg;
-
-          if (errorData is Map<String, dynamic>) {
-            if (errorData.containsKey('detail')) {
-              errorMsg = errorData['detail'];
-            } else if (errorData.containsKey('error')) {
-              errorMsg = errorData['error'];
-            } else {
-              errorMsg = errorData.values.join(", ");
-            }
-          } else {
-            errorMsg = 'Unknown error';
-          }
-
-          _showMessage("Registration failed: $errorMsg");
-        } else {
-          _showMessage("Registration failed: ${e.toString()}");
-        }
+        _handleError(e, context: "Registration");
       }
     }
+  }
+
+  void _handleError(Object e, {required String context}) {
+    String errorMsg = "$context failed";
+    if (e is DioException) {
+      final errorData = e.response?.data;
+      if (errorData is Map<String, dynamic>) {
+        if (errorData.containsKey('detail')) {
+          errorMsg = "$context failed: ${errorData['detail']}";
+        } else if (errorData.containsKey('error')) {
+          errorMsg = "$context failed: ${errorData['error']}";
+        } else {
+          errorMsg = "$context failed: ${errorData.values.join(', ')}";
+        }
+      }
+    } else {
+      errorMsg = "$context failed: ${e.toString()}";
+    }
+    _showMessage(errorMsg);
   }
 
   @override
@@ -167,7 +141,6 @@ class _LoginPageState extends State<LoginPage> {
             height: double.infinity,
             width: double.infinity,
           ),
-          Container(),
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(top: 170),

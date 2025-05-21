@@ -1,6 +1,6 @@
 // main.dart
 import 'package:flutter/material.dart';
-import 'pages/login.dart';
+import 'login.dart';
 import 'db/db_zones.dart';
 
 void main() async {
