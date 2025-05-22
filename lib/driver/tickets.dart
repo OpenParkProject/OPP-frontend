@@ -51,7 +51,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
 
         if (end.isBefore(now)) {
           expiredTickets.add(t);
-        } else if (paid && start.isBefore(now) && end.isAfter(now)) {
+        } else if (paid && now.isAfter(start.subtract(Duration(minutes: 1))) && now.isBefore(end.add(Duration(minutes: 1)))) {
           activeTickets.add(t);
         } else if (paid) {
           scheduledPaid.add(t);
@@ -113,7 +113,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
             ),
             SizedBox(height: 12),
             if (start != null && end != null) ...[
-              Row(children: [Icon(Icons.login, size: 16), SizedBox(width: 6), Text("From: ${dateFormat.format(start)}")]),
+              Row(children: [Icon(Icons.login, size: 16), SizedBox(width: 6), Text("Start: ${dateFormat.format(start)}")]),
               SizedBox(height: 4),
               Row(
                 children: [
@@ -122,7 +122,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                   isActive
                       ? Text("Expires at: ${DateFormat('HH:mm').format(end)}",
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red.shade400))
-                      : Text("To:   ${dateFormat.format(end)}"),
+                      : Text("Expiration:   ${dateFormat.format(end)}"),
                 ],
               ),
             ],
@@ -231,29 +231,23 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ParkingZoneSelectionPage()),
+          );
+          await Future.delayed(Duration(milliseconds: 500));
+          _fetchTickets();
+        },
+        icon: const Icon(Icons.add_circle_outline),
+        label: const Text("New Ticket"),
+        backgroundColor: const Color(0xFF1976D2),
+        foregroundColor: Colors.white,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton.icon(
-              icon: Icon(Icons.add_circle_outline),
-              label: Text("New Ticket"),
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 48),
-                backgroundColor: Color(0xFF1976D2),
-                foregroundColor: Colors.white,
-                textStyle: TextStyle(fontSize: 16),
-              ),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ParkingZoneSelectionPage()),
-                );
-                await Future.delayed(Duration(milliseconds: 500));
-                _fetchTickets();
-              },
-            ),
-          ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -262,49 +256,48 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                   : errorMsg != null
                       ? Center(child: Text(errorMsg!))
                       : ListView(
-                          children: [
-                            if (activeTickets.isNotEmpty) ...[
-                              Text("Currently Active", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              SizedBox(height: 8),
-                              ...activeTickets.map((t) => _buildTicketCard(t)),
-                              Divider(height: 32, thickness: 2),
-                            ],
-                            if (scheduledPaid.isNotEmpty) ...[
-                              Text("Scheduled – Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              SizedBox(height: 8),
-                              ...scheduledPaid.map((t) => _buildTicketCard(t)),
-                              Divider(height: 32, thickness: 2),
-                            ],
-                            if (scheduledUnpaid.isNotEmpty) ...[
-                              Text("Scheduled – Not Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              SizedBox(height: 8),
-                              ...scheduledUnpaid.map((t) => _buildTicketCard(t)),
-                              Divider(height: 32, thickness: 2),
-                            ],
-                            if (expiredTickets.isNotEmpty) ...[
-                              GestureDetector(
-                                onTap: () => setState(() => showExpired = !showExpired),
-                                child: Row(
-                                  children: [
-                                    Icon(showExpired ? Icons.expand_less : Icons.expand_more),
-                                    SizedBox(width: 8),
-                                    Text("Expired Tickets", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              AnimatedCrossFade(
-                                crossFadeState:
-                                    showExpired ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                                duration: Duration(milliseconds: 300),
-                                firstChild: Column(
-                                  children: expiredTickets.map((t) => _buildTicketCard(t, isExpired: true)).toList(),
-                                ),
-                                secondChild: SizedBox.shrink(),
-                              ),
-                            ],
+                        children: [
+                          if (activeTickets.isNotEmpty) ...[
+                            Text("Currently Active", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8),
+                            ...activeTickets.map((t) => _buildTicketCard(t)),
+                            Divider(height: 32, thickness: 2),
                           ],
-                        ),
+                          if (scheduledPaid.isNotEmpty) ...[
+                            Text("Scheduled – Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8),
+                            ...scheduledPaid.map((t) => _buildTicketCard(t)),
+                            Divider(height: 32, thickness: 2),
+                          ],
+                          if (scheduledUnpaid.isNotEmpty) ...[
+                            Text("Scheduled – Not Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8),
+                            ...scheduledUnpaid.map((t) => _buildTicketCard(t)),
+                            Divider(height: 32, thickness: 2),
+                          ],
+                          if (expiredTickets.isNotEmpty) ...[
+                            GestureDetector(
+                              onTap: () => setState(() => showExpired = !showExpired),
+                              child: Row(
+                                children: [
+                                  Icon(showExpired ? Icons.expand_less : Icons.expand_more),
+                                  SizedBox(width: 8),
+                                  Text("Expired Tickets", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            AnimatedCrossFade(
+                              crossFadeState: showExpired ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                              duration: Duration(milliseconds: 300),
+                              firstChild: Column(
+                                children: expiredTickets.map((t) => _buildTicketCard(t, isExpired: true)).toList(),
+                              ),
+                              secondChild: SizedBox.shrink(),
+                            ),
+                          ],
+                        ],
+                      )
             ),
           ),
         ],

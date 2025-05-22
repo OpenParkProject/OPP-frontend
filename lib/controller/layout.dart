@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../login.dart';
 import 'manual_check.dart';
-import 'ocr_check.dart';
+import 'ocr/ocr_check.dart';
 
 class ControllerLayout extends StatefulWidget {
   final String username;
@@ -50,7 +50,45 @@ class _ControllerLayoutState extends State<ControllerLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedIndex]),
+        toolbarHeight: 60,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 360) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '👮 Controller Interface',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    ),
+                    Text(
+                      _titles[_selectedIndex],
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ],
+                ),
+              );
+              } else {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '👮 Controller Interface',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                  Text(
+                    _titles[_selectedIndex],
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ],
+              );
+            }
+          },
+        ),
         actions: [
           Center(
             child: Padding(

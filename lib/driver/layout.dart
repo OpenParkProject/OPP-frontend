@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tickets_page.dart';
+import 'tickets.dart';
 import 'profile.dart';
 import 'my_cars.dart';
 

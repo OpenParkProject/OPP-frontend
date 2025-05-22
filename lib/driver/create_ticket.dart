@@ -71,7 +71,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
   Future<void> _createTicket() async {
     final cost = _durationMinutes * _pricePerMinute;
     final startDate = _startNow
-        ? DateTime.now().add(Duration(minutes: 1))
+        ? DateTime.now().add(Duration(seconds: 2))
         : (_scheduledDate ?? DateTime.now().add(Duration(minutes: 2)));
 
     setState(() => _creating = true);
@@ -119,7 +119,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
     final cost = _durationMinutes * _pricePerMinute;
     final now = DateTime.now();
     final DateTime start = _startNow
-        ? now.add(Duration(minutes: 1))
+        ? now.add(Duration(seconds: 2))
         : (_scheduledDate ?? now.add(Duration(minutes: 2)));
     final DateTime end = start.add(Duration(minutes: _durationMinutes));
 

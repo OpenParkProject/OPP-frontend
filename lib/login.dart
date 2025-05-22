@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'user/layout.dart';
-import 'user/zone_selection.dart';
+import 'driver/layout.dart';
+import 'driver/zone_selection.dart';
 import 'package:dio/dio.dart';
 import 'singleton/dio_client.dart';
 import 'controller/layout.dart';
@@ -43,15 +43,22 @@ class _LoginPageState extends State<LoginPage> {
         });
 
         final user = response.data['user'];
-        final role = user['role'];
+        //final role = user['role'];
         final token = response.data['access_token'];
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', token);
 
-        await DioClient().setAuthToken(); // imposta il token nel client Dio
+        await DioClient().setAuthToken();
 
         _showMessage("Login successful: Welcome, ${user['username']}!");
+
+        // TEMPORARY ESCAMOTAGE until API includes `role`
+        String role = user['role'] ?? '';
+
+        if (username == "c" && password == "c") {
+          role = "controller"; // override temporaneo solo per utente test
+        }
 
         if (role == 'controller') {
           Navigator.pushReplacement(

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class OCRCheck extends StatefulWidget {
   const OCRCheck({super.key});
@@ -26,58 +26,55 @@ class _OCRCheckState extends State<OCRCheck> {
         setState(() {
           _image = imageFile;
         });
-        _performOCR(imageFile);
+        await _performOCR(imageFile);
       }
-    } else if (status.isPermanentlyDenied) {
-      openAppSettings(); // opzionale: apre le impostazioni app se negato in modo permanente
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Permesso fotocamera negato. Modifica dalle impostazioni.")),
-      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Permesso fotocamera non concesso")),
+        const SnackBar(content: Text("Camera permission not granted.")),
       );
     }
   }
 
   Future<void> _performOCR(File imageFile) async {
-    final inputImage = InputImage.fromFile(imageFile);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final inputImage = InputImage.fromFile(imageFile);
+      final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final result = await recognizer.processImage(inputImage);
+      recognizer.close();
 
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-    textRecognizer.close();
+      final allText = result.text;
+      final regex = RegExp(r'\b[A-Z]{2}\d{3}[A-Z]{2}\b');
+      final match = regex.firstMatch(allText);
 
-    final allText = recognizedText.text;
-
-    // Estrai prima parola maiuscola tipo targa italiana
-    final regex = RegExp(r'\b[A-Z]{2}\d{3}[A-Z]{2}\b');
-    final match = regex.firstMatch(allText);
-
-    if (match != null) {
-      final plate = match.group(0);
-      setState(() {
-        _scannedPlate = plate;
-        _controller.text = plate!;
-      });
-    } else {
-      setState(() {
-        _scannedPlate = null;
-        _controller.text = '';
-      });
+      if (match != null) {
+        final plate = match.group(0);
+        setState(() {
+          _scannedPlate = plate;
+          _controller.text = plate!;
+        });
+      } else {
+        setState(() {
+          _scannedPlate = null;
+          _controller.clear();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Plate not recognized.")),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Targa non riconosciuta")),
+        SnackBar(content: Text("OCR failed: $e")),
       );
     }
   }
 
   void _submitPlate() {
     final plate = _controller.text.trim().toUpperCase();
-    if (plate.isEmpty) return;
-
-    // Qui potrai collegare l’API per la verifica della targa
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Verifica in corso per: $plate')),
-    );
+    if (plate.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Checking plate: $plate")),
+      );
+    }
   }
 
   @override
@@ -90,7 +87,7 @@ class _OCRCheckState extends State<OCRCheck> {
             ElevatedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.camera_alt),
-              label: const Text("Scatta foto"),
+              label: const Text("Take Photo"),
             ),
             const SizedBox(height: 20),
             if (_image != null)
@@ -102,14 +99,14 @@ class _OCRCheckState extends State<OCRCheck> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24),
                 decoration: const InputDecoration(
-                  labelText: "Targa rilevata",
+                  labelText: "Detected Plate",
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: _submitPlate,
-                child: const Text("Verifica"),
+                child: const Text("Submit"),
               ),
             ],
           ],
