@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
 import 'db/db_zones.dart';
+import 'controller/issue_fine.dart';
+import 'config.dart';
+import 'debug/debug_role_selector.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,7 +49,11 @@ class ParkingApp extends StatelessWidget {
           elevation: 2,
         ),
       ),
-      home: LoginPage(),
+
+      routes: {
+        '/issue_fine': (context) => const IssueFinePage(),
+      },
+      home: debugMode ? const DebugRoleSelector() : LoginPage(),
     );
   }
 }

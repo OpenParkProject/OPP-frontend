@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../singleton/dio_client.dart';
+import '../widgets/ticket_check_widget.dart';
 
 class ManualCheckPage extends StatefulWidget {
-  const ManualCheckPage({super.key});
+  final String username;
+  const ManualCheckPage({super.key, required this.username});
 
   @override
   State<ManualCheckPage> createState() => _ManualCheckPageState();
@@ -23,72 +25,80 @@ class _ManualCheckPageState extends State<ManualCheckPage> {
   DateTime? _selectedDate;
   bool _hasSearched = false;
 
-  Future<void> _fetchTickets() async {
-    _hasSearched = true;
-    final plate = _plateController.text.trim().toUpperCase();
-    if (plate.isEmpty) return;
+Future<void> _fetchTickets() async {
+  _hasSearched = true;
+  final plate = _plateController.text.trim().toUpperCase();
 
+  // Check plate format
+  final validPlateRegExp = RegExp(r'^[A-Z]{2}[0-9]{3}[A-Z]{2}$');
+  if (!validPlateRegExp.hasMatch(plate)) {
     setState(() {
-      _loading = true;
-      _errorMessage = null;
-      allTickets.clear();
-      activeTickets.clear();
-      recentExpiredTickets.clear();
-      filteredHistory.clear();
+      _errorMessage = "Invalid plate format. Expected: 2 letters + 3 numbers + 2 letters (e.g. AB123CD)";
     });
+    return;
+  }
 
-    try {
-      final dio = DioClient().dio;
-      final response = await dio.get('/cars/$plate/tickets');
-      final data = response.data;
+  setState(() {
+    _loading = true;
+    _errorMessage = null;
+    allTickets.clear();
+    activeTickets.clear();
+    recentExpiredTickets.clear();
+    filteredHistory.clear();
+  });
 
-      if (data is List) {
-        final now = DateTime.now();
-        for (var ticket in data) {
-          try {
-            final start = DateTime.parse(ticket['start_date']).toLocal();
-            final end = DateTime.parse(ticket['end_date']).toLocal();
-            ticket['parsed_start'] = start;
-            ticket['parsed_end'] = end;
-            if (ticket['creation_time'] != null) {
-              try {
-                final created = DateTime.parse(ticket['creation_time']).toLocal();
-                ticket['parsed_creation'] = created;
-              } catch (_) {
-                ticket['parsed_creation'] = null;
-              }
-            } else {
+  try {
+    final dio = DioClient().dio;
+    final response = await dio.get('/cars/$plate/tickets');
+    final data = response.data;
+
+    if (data is List) {
+      final now = DateTime.now();
+      for (var ticket in data) {
+        try {
+          final start = DateTime.parse(ticket['start_date']).toLocal();
+          final end = DateTime.parse(ticket['end_date']).toLocal();
+          ticket['parsed_start'] = start;
+          ticket['parsed_end'] = end;
+          if (ticket['creation_time'] != null) {
+            try {
+              final created = DateTime.parse(ticket['creation_time']).toLocal();
+              ticket['parsed_creation'] = created;
+            } catch (_) {
               ticket['parsed_creation'] = null;
             }
+          } else {
+            ticket['parsed_creation'] = null;
+          }
 
-            if (now.isAfter(start) && now.isBefore(end)) {
-              activeTickets.add(ticket);
-            } else if (now.isAfter(end) && now.difference(end).inMinutes <= 30) {
-              recentExpiredTickets.add(ticket);
-            }
+          if (now.isAfter(start) && now.isBefore(end)) {
+            activeTickets.add(ticket);
+          } else if (now.isAfter(end) && now.difference(end).inMinutes <= 30) {
+            recentExpiredTickets.add(ticket);
+          }
 
-            allTickets.add(ticket);
-          } catch (_) {}
-        }
-
-        setState(() {
-          filteredHistory = List.from(allTickets);
-        });
-      } else {
-        setState(() {
-          _errorMessage = "Unexpected server response.";
-        });
+          allTickets.add(ticket);
+        } catch (_) {}
       }
-    } catch (e) {
+
       setState(() {
-        _errorMessage = "Error: ${_handleError(e)}";
+        filteredHistory = List.from(allTickets);
       });
-    } finally {
+    } else {
       setState(() {
-        _loading = false;
+        _errorMessage = "Unexpected server response.";
       });
     }
+  } catch (e) {
+    setState(() {
+      _errorMessage = "Error: ${_handleError(e)}";
+    });
+  } finally {
+    setState(() {
+      _loading = false;
+    });
   }
+}
 
   void _filterHistoryByDate(DateTime date) {
     setState(() {
@@ -230,94 +240,19 @@ class _ManualCheckPageState extends State<ManualCheckPage> {
                 labelText: "Enter plate number",
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: (_) => _fetchTickets(),
+              onSubmitted: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             ElevatedButton(
-              onPressed: _fetchTickets,
+              onPressed: () => setState(() {}),
               child: const Text("Search Tickets"),
             ),
             const SizedBox(height: 20),
-            if (!_hasSearched)
-              const SizedBox.shrink()
-            else if (_loading)
-              const CircularProgressIndicator()
-            else if (_errorMessage != null)
-              Text(_errorMessage!, style: const TextStyle(color: Colors.red))
-            else
+            if (_plateController.text.trim().isNotEmpty)
               Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (activeTickets.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red[100],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.warning, color: Colors.red),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text("❌ No valid parking ticket found for this plate."),
-                              )
-                            ],
-                          ),
-                        )
-                      else ...[
-                        const Text("Active Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        ...activeTickets.map((t) => _buildTicketCard(t, active: true)),
-                        const Divider(),
-                      ],
-                      if (recentExpiredTickets.isNotEmpty) ...[
-                        const Text("Recently Expired Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        ...recentExpiredTickets.map((t) => _buildTicketCard(t, expired: true)),
-                        const Divider(),
-                      ],
-                      ExpansionTile(
-                        title: const Text("Ticket History"),
-                        initiallyExpanded: _showHistory,
-                        onExpansionChanged: (expanded) => setState(() => _showHistory = expanded),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Row(
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => _selectDate(context),
-                                  child: const Text("Select date"),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(_selectedDate != null
-                                    ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
-                                    : "No date selected"),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          if (filteredHistory.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Text("No tickets found for the selected date."),
-                            )
-                          else
-                            ...filteredHistory.map((t) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 0),
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width),
-                                    child: _buildTicketCard(t),
-                                  ),
-                                )),
-                        ],
-                      ),
-                    ],
-                  ),
+                child: TicketCheckWidget(
+                  plate: _plateController.text.trim().toUpperCase(),
+                  username: widget.username,
                 ),
               ),
           ],

@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../login.dart';
 import 'manual_check.dart';
-import 'ocr/ocr_check.dart';
+import 'ocr.dart';
+import 'fines_issued.dart';
+import 'chalked_cars.dart';
+import 'dart:io';
+
+bool get isOcrSupported => Platform.isAndroid || Platform.isLinux;
 
 class ControllerLayout extends StatefulWidget {
   final String username;
@@ -16,6 +21,12 @@ class ControllerLayout extends StatefulWidget {
 class _ControllerLayoutState extends State<ControllerLayout> {
   int _selectedIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = isOcrSupported ? 0 : 1; // lands on  "Manual" if OCR is not supported on the device
+  }
+
   final List<String> _titles = [
     "OCR Plate Check",
     "Manual Plate Check",
@@ -23,14 +34,27 @@ class _ControllerLayoutState extends State<ControllerLayout> {
     "Fines Issued",
   ];
 
-  final List<Widget> _pages = [
-    const OCRCheck(),
-    const ManualCheckPage(),
-    const PlaceholderWidget(title: "Chalked Cars Page"),
-    const PlaceholderWidget(title: "Fines Issued Page"),
+  List<Widget> get _pages => [
+    if (isOcrSupported)
+      OCRPage(username: widget.username)
+    else
+      const PlaceholderWidget(title: 'OCR not supported on this device.'),
+    ManualCheckPage(username: widget.username),
+    ChalkedCarsPage(username: widget.username),
+    const FinesIssuedPage(),
   ];
 
   void _onItemTapped(int index) {
+    if (index == 0 && !isOcrSupported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('OCR is not supported on this device.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return; // blocks page change
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -113,13 +137,19 @@ class _ControllerLayoutState extends State<ControllerLayout> {
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: "OCR"),
-          BottomNavigationBarItem(icon: Icon(Icons.edit), label: "Manual"),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_car), label: "Chalked"),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt), label: "Fines"),
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.camera_alt,
+              color: isOcrSupported ? null : Colors.grey, // disattivato visivamente
+            ),
+            label: "OCR",
+          ),
+          const BottomNavigationBarItem(icon: Icon(Icons.edit), label: "Manual"),
+          const BottomNavigationBarItem(icon: Icon(Icons.directions_car), label: "Chalked"),
+          const BottomNavigationBarItem(icon: Icon(Icons.receipt), label: "Fines"),
         ],
-      ),
+      )
     );
   }
 }
