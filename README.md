@@ -1,4 +1,4 @@
-# mockup_frontend
+# OpenPark
 
 A new Flutter project.
 
