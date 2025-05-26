@@ -1,6 +1,6 @@
 {
-    "name": "mockup_frontend",
-    "short_name": "mockup_frontend",
+    "name": "opp_frontend",
+    "short_name": "opp_frontend",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
