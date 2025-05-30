@@ -21,6 +21,14 @@ dependencies:
   path_provider: ^2.1.1
   permission_handler: ^12.0.0+1
   path: ^1.8.3
+  flutter_local_notifications: ^17.0.0
+  android_alarm_manager_plus: ^3.0.0
+  universal_platform: ^1.0.0+1
+  opp_api_client:
+    git:
+      url: https://github.com/OpenParkProject/OPP-common.git
+      ref: dart-dio-client
+  
 
 dev_dependencies:
   flutter_test:

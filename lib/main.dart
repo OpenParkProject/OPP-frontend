@@ -1,16 +1,52 @@
-// main.dart
+import 'dart:convert';
+
+//import 'dart:io' show Platform;
+
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:flutter/material.dart';
-import 'login.dart';
-import 'db/db_zones.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_platform/universal_platform.dart';
+
+import 'config.dart'; // <-- Importa il flag debugMode
 import 'controller/issue_fine.dart';
-import 'config.dart';
+import 'db/db_zones.dart';
 import 'debug/debug_role_selector.dart';
+import 'driver/layout.dart';
+import 'login.dart';
+import 'singleton/dio_client.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load parking zones from CSV before launching app
   await ZoneDB.loadZones();
+
+  // if (Platform.isAndroid) {
+  if (UniversalPlatform.isAndroid) {
+    await AndroidAlarmManager.initialize();
+    await AndroidAlarmManager.periodic(
+      const Duration(minutes: 5),
+      0,
+      checkExpiringTickets,
+      wakeup: true,
+      rescheduleOnReboot: true,
+    );
+  }
+
+  await flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    ),
+    onDidReceiveNotificationResponse: (details) {
+      if (details.payload == 'open_ticket') {
+        navigatorKey.currentState?.pushNamed('/tickets');
+      }
+    },
+  );
 
   runApp(ParkingApp());
 }
@@ -19,6 +55,7 @@ class ParkingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Open Park',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -49,11 +86,107 @@ class ParkingApp extends StatelessWidget {
           elevation: 2,
         ),
       ),
-
       routes: {
         '/issue_fine': (context) => const IssueFinePage(),
+        '/tickets': (context) => MainUserHomePage(username: "User"),
       },
-      home: debugMode ? const DebugRoleSelector() : LoginPage(),
+      home: StartupRouter(),
     );
   }
+}
+
+class StartupRouter extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _initAndRoute(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return snapshot.data as Widget;
+      },
+    );
+  }
+
+  Future<Widget> _initAndRoute() async {
+    if (debugMode) {
+      return DebugRoleSelector(); // <<-- bypass login in debug mode
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final remember = prefs.getBool('remember_me') ?? false;
+
+    if (remember && token != null) {
+      await DioClient().setAuthToken();
+      final userRes = await DioClient().dio.get('/users/me');
+      final username = userRes.data['username'];
+      return MainUserHomePage(username: username);
+    }
+
+    return LoginPage();
+  }
+}
+
+Future<void> checkExpiringTickets() async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString('local_tickets');
+  if (raw == null) return;
+
+  final List<dynamic> tickets = jsonDecode(raw);
+  final now = DateTime.now();
+  final notifiedIds = prefs.getStringList('notified_ticket_ids') ?? [];
+
+  for (final t in tickets) {
+    final id = t['id'].toString();
+    final end = DateTime.tryParse(t['end_time']);
+    if (end == null) continue;
+
+    final diff = end.difference(now).inMinutes;
+
+    if (diff <= 10 && diff >= 0 && !notifiedIds.contains(id)) {
+      await flutterLocalNotificationsPlugin.show(
+        id.hashCode,
+        '⏰ Ticket expiring soon!',
+        'Expires at ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'ticket_channel',
+            'Ticket Notifications',
+            channelDescription: 'Notify when ticket is about to expire',
+            importance: Importance.max,
+            priority: Priority.high,
+            visibility: NotificationVisibility.public,
+            usesChronometer: true,
+            showWhen: true,
+          ),
+        ),
+        payload: 'open_ticket',
+      );
+      notifiedIds.add(id);
+    }
+
+    if (diff < 0 && diff >= -5 && !notifiedIds.contains("expired_$id")) {
+      await flutterLocalNotificationsPlugin.show(
+        id.hashCode,
+        '⚠️ Ticket expired!',
+        'Your parking time ended ${-diff} minutes ago.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'expired_channel',
+            'Expired Tickets',
+            channelDescription: 'Notify when ticket has just expired',
+            importance: Importance.max,
+            priority: Priority.high,
+            visibility: NotificationVisibility.public,
+          ),
+        ),
+        payload: 'open_ticket',
+      );
+      notifiedIds.add("expired_$id");
+    }
+  }
+
+  await prefs.setStringList('notified_ticket_ids', notifiedIds);
 }
