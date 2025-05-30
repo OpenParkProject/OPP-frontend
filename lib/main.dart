@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:universal_platform/universal_platform.dart';
 
 import 'login.dart';
 import 'db/db_zones.dart';
@@ -24,9 +23,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ZoneDB.loadZones();
 
-  if (kIsWeb) {
+  if (UniversalPlatform.isWeb) {
     // Web-specific code
-  } else if (Platform.isAndroid) {
+  } else if (UniversalPlatform.isAndroid) {
       await AndroidAlarmManager.initialize();
       await AndroidAlarmManager.periodic(
         const Duration(minutes: 5),

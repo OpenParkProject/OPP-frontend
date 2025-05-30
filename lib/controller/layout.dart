@@ -1,13 +1,17 @@
+//import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_platform/universal_platform.dart';
+
 import '../login.dart';
+import 'chalked_cars.dart';
+import 'fines_issued.dart';
 import 'manual_check.dart';
 import 'ocr.dart';
-import 'fines_issued.dart';
-import 'chalked_cars.dart';
-import 'dart:io';
 
-bool get isOcrSupported => Platform.isAndroid || Platform.isLinux;
+bool get isOcrSupported =>
+    UniversalPlatform.isAndroid || UniversalPlatform.isLinux;
 
 class ControllerLayout extends StatefulWidget {
   final String username;
@@ -24,7 +28,10 @@ class _ControllerLayoutState extends State<ControllerLayout> {
   @override
   void initState() {
     super.initState();
-    _selectedIndex = isOcrSupported ? 0 : 1; // lands on  "Manual" if OCR is not supported on the device
+    _selectedIndex =
+        isOcrSupported
+            ? 0
+            : 1; // lands on  "Manual" if OCR is not supported on the device
   }
 
   final List<String> _titles = [
@@ -84,7 +91,10 @@ class _ControllerLayoutState extends State<ControllerLayout> {
                   children: [
                     const Text(
                       '👮 Controller Interface',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
                     ),
                     Text(
                       _titles[_selectedIndex],
@@ -93,7 +103,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
                   ],
                 ),
               );
-              } else {
+            } else {
               return Stack(
                 alignment: Alignment.center,
                 children: [
@@ -101,7 +111,10 @@ class _ControllerLayoutState extends State<ControllerLayout> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '👮 Controller Interface',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
                   Text(
@@ -141,15 +154,27 @@ class _ControllerLayoutState extends State<ControllerLayout> {
           BottomNavigationBarItem(
             icon: Icon(
               Icons.camera_alt,
-              color: isOcrSupported ? null : Colors.grey, // disattivato visivamente
+              color:
+                  isOcrSupported
+                      ? null
+                      : Colors.grey, // disattivato visivamente
             ),
             label: "OCR",
           ),
-          const BottomNavigationBarItem(icon: Icon(Icons.edit), label: "Manual"),
-          const BottomNavigationBarItem(icon: Icon(Icons.directions_car), label: "Chalked"),
-          const BottomNavigationBarItem(icon: Icon(Icons.receipt), label: "Fines"),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.edit),
+            label: "Manual",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.directions_car),
+            label: "Chalked",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.receipt),
+            label: "Fines",
+          ),
         ],
-      )
+      ),
     );
   }
 }

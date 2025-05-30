@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_platform/universal_platform.dart';
 import '/widgets/ticket_check_widget.dart';
 
 class OCRPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _OCRPageState extends State<OCRPage> {
   final List<Map<String, dynamic>> _history = []; // { "imagePath": String, "text": String }
   final ImagePicker _picker = ImagePicker();
 
-  bool get isOCREnabled => Platform.isAndroid || Platform.isLinux;
+  bool get isOCREnabled => UniversalPlatform.isAndroid || UniversalPlatform.isLinux;
 
   @override
   void initState() {
