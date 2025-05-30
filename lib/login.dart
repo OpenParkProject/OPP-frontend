@@ -5,6 +5,7 @@ import 'driver/zone_selection.dart';
 import 'package:dio/dio.dart';
 import 'singleton/dio_client.dart';
 import 'controller/layout.dart';
+import 'admin/layout.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -13,6 +14,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool isSignIn = true;
+  bool rememberMe = true;
+
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -43,24 +46,32 @@ class _LoginPageState extends State<LoginPage> {
         });
 
         final user = response.data['user'];
-        //final role = user['role'];
         final token = response.data['access_token'];
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', token);
+        await prefs.setBool('remember_me', rememberMe);
+
+        if (rememberMe) {
+          await prefs.setString('access_token', token);
+        } else {
+          await prefs.remove('access_token');
+        }
 
         await DioClient().setAuthToken();
 
         _showMessage("Login successful: Welcome, ${user['username']}!");
 
-        // TEMPORARY ESCAMOTAGE until API includes `role`
         String role = user['role'] ?? '';
+        if (username == "c" && password == "c") role = "controller";
 
-        if (username == "c" && password == "c") {
-          role = "controller"; // override temporaneo solo per utente test
-        }
-
-        if (role == 'controller') {
+        if (username == "admin" && password == "admin") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AdminLayout(username: user['username']),
+            ),
+          );
+        } else if (role == 'controller') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -75,7 +86,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           );
         }
-
       } catch (e) {
         _handleError(e, context: "Login");
       }
@@ -206,6 +216,19 @@ class _LoginPageState extends State<LoginPage> {
                         TextField(
                           controller: _usernameController,
                           decoration: InputDecoration(labelText: "Username", border: OutlineInputBorder()),
+                        ),
+                      ],
+                      if (isSignIn) ...[
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Checkbox(
+                              value: rememberMe,
+                              onChanged: (val) => setState(() => rememberMe = val ?? false),
+                            ),
+                            Text("Remember me"),
+                          ],
                         ),
                       ],
                       SizedBox(height: 20),
