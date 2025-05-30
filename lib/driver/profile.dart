@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import '../singleton/dio_client.dart';
 import '../login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -224,8 +224,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                         SizedBox(height: 12),
                         OutlinedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             DioClient().clearAuthToken();
+                            final prefs = await SharedPreferences.getInstance();
+                            await prefs.remove('access_token');
+                            await prefs.remove('remember_me');
+                            DioClient().clearAuthToken();
+
                             Navigator.pushAndRemoveUntil(
                               context,
                               MaterialPageRoute(builder: (_) => LoginPage()),

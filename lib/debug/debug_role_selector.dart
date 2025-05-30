@@ -1,3 +1,5 @@
+import 'package:openpark/admin/layout.dart';
+
 import '../login.dart';
 import 'package:flutter/material.dart';
 import '../driver/layout.dart';
@@ -18,7 +20,7 @@ class DebugRoleSelector extends StatelessWidget {
         destination = const ControllerLayout(username: 'debug_controller');
         break;
       case 'admin':
-        destination = PlaceholderWidget(title: 'Admin Interface (WIP)');
+        destination = AdminLayout(username: 'debug_admin');
         break;
       default:
         destination = LoginPage();
@@ -57,7 +59,7 @@ class DebugRoleSelector extends StatelessWidget {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: () => _navigateToRole(context, 'admin'),
-                child: const Text('Admin Interface (if exists)'),
+                child: const Text('Admin Interface'),
               ),
             ],
           ),
