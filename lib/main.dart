@@ -11,7 +11,7 @@ import 'controller/issue_fine.dart';
 import 'debug/debug_role_selector.dart';
 import 'singleton/dio_client.dart';
 import 'driver/layout.dart';
-import 'config.dart'; // <-- Importa il flag debugMode
+import 'config.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();

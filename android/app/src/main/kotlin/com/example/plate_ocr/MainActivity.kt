@@ -1,4 +1,4 @@
-package com.example.opp_frontend
+package com.openpark.app
 
 import io.flutter.embedding.android.FlutterActivity
 
