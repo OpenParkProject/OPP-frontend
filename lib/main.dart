@@ -1,265 +1,186 @@
 import 'package:flutter/material.dart';
-import 'package:opp_frontend/login.dart';
-import 'package:opp_frontend/register.dart';
-import 'package:provider/provider.dart';
-import 'theme_notifier.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:io' show Platform;
 
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-      child: MyApp(),
+import 'login.dart';
+import 'db/db_zones.dart';
+import 'controller/issue_fine.dart';
+import 'debug/debug_role_selector.dart';
+import 'singleton/dio_client.dart';
+import 'driver/layout.dart';
+import 'config.dart';
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ZoneDB.loadZones();
+
+  if (Platform.isAndroid) {
+    await AndroidAlarmManager.initialize();
+    await AndroidAlarmManager.periodic(
+      const Duration(minutes: 5),
+      0,
+      checkExpiringTickets,
+      wakeup: true,
+      rescheduleOnReboot: true,
+    );
+  }
+
+  await flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     ),
+    onDidReceiveNotificationResponse: (details) {
+      if (details.payload == 'open_ticket') {
+        navigatorKey.currentState?.pushNamed('/tickets');
+      }
+    },
   );
+
+  runApp(ParkingApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class ParkingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-      child: Consumer<ThemeNotifier>(
-        builder: (context, themeNotifier, child) {
-          return MaterialApp(
-            debugShowCheckedModeBanner: false,
-            title: 'My Building App',
-            theme: themeNotifier.currentTheme,
-            home: const HomePage(),
-          );
-        },
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      title: 'Open Park',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xFF1976D2),
+          brightness: Brightness.light,
+        ),
+        scaffoldBackgroundColor: Color(0xFFF5FAFF),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Color(0xFF1976D2),
+            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          ),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF1976D2),
+          foregroundColor: Colors.white,
+          centerTitle: true,
+          elevation: 2,
+        ),
       ),
+      routes: {
+        '/issue_fine': (context) => const IssueFinePage(),
+        '/tickets': (context) => MainUserHomePage(username: "User"),
+      },
+      home: StartupRouter(),
     );
   }
 }
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
+class StartupRouter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('OpenPark'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.brightness_6),
-            onPressed: () {
-              Provider.of<ThemeNotifier>(context, listen: false).toggleTheme();
-            },
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('images/ParkingBG.png'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(height: 40),
-                Card(
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(horizontal: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15.0),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        SizedBox(
-                          width: 300,
-                          child: Text(
-                            "Please login or register.",
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: Size(200, 50),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => LoginPage()),
-                            );
-                          },
-                          child: const Text('Login'),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            textStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            elevation: 5,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            minimumSize: Size(200, 50),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => RegistrationPage()),
-                            );
-                          },
-                          child: const Text('Register'),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return FutureBuilder(
+      future: _initAndRoute(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return snapshot.data as Widget;
+      },
     );
+  }
+
+  Future<Widget> _initAndRoute() async {
+    if (debugMode) {
+      return DebugRoleSelector(); // <<-- bypass login in debug mode
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final remember = prefs.getBool('remember_me') ?? false;
+
+    if (remember && token != null) {
+      await DioClient().setAuthToken();
+      final userRes = await DioClient().dio.get('/users/me');
+      final username = userRes.data['username'];
+      return MainUserHomePage(username: username);
+    }
+
+    return LoginPage();
   }
 }
 
+Future<void> checkExpiringTickets() async {
+  final prefs = await SharedPreferences.getInstance();
+  final raw = prefs.getString('local_tickets');
+  if (raw == null) return;
 
+  final List<dynamic> tickets = jsonDecode(raw);
+  final now = DateTime.now();
+  final notifiedIds = prefs.getStringList('notified_ticket_ids') ?? [];
 
+  for (final t in tickets) {
+    final id = t['id'].toString();
+    final end = DateTime.tryParse(t['end_time']);
+    if (end == null) continue;
 
+    final diff = end.difference(now).inMinutes;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class Counter extends StatefulWidget {
-  const Counter({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<Counter> createState() => _CounterState();
-}
-
-class _CounterState extends State<Counter> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+    if (diff <= 10 && diff >= 0 && !notifiedIds.contains(id)) {
+      await flutterLocalNotificationsPlugin.show(
+        id.hashCode,
+        '⏰ Ticket expiring soon!',
+        'Expires at ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'ticket_channel',
+            'Ticket Notifications',
+            channelDescription: 'Notify when ticket is about to expire',
+            importance: Importance.max,
+            priority: Priority.high,
+            visibility: NotificationVisibility.public,
+            usesChronometer: true,
+            showWhen: true,
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+        payload: 'open_ticket',
+      );
+      notifiedIds.add(id);
+    }
+
+    if (diff < 0 && diff >= -5 && !notifiedIds.contains("expired_$id")) {
+      await flutterLocalNotificationsPlugin.show(
+        id.hashCode,
+        '⚠️ Ticket expired!',
+        'Your parking time ended ${-diff} minutes ago.',
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'expired_channel',
+            'Expired Tickets',
+            channelDescription: 'Notify when ticket has just expired',
+            importance: Importance.max,
+            priority: Priority.high,
+            visibility: NotificationVisibility.public,
+          ),
+        ),
+        payload: 'open_ticket',
+      );
+      notifiedIds.add("expired_$id");
+    }
   }
+
+  await prefs.setStringList('notified_ticket_ids', notifiedIds);
 }

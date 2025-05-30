@@ -1,6 +1,6 @@
 {
-    "name": "opp_frontend",
-    "short_name": "opp_frontend",
+    "name": "openpark",
+    "short_name": "openpark",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
