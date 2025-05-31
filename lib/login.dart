@@ -14,7 +14,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool isSignIn = true;
-  bool rememberMe = true;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -49,13 +48,7 @@ class _LoginPageState extends State<LoginPage> {
         final token = response.data['access_token'];
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('remember_me', rememberMe);
-
-        if (rememberMe) {
-          await prefs.setString('access_token', token);
-        } else {
-          await prefs.remove('access_token');
-        }
+        await prefs.setString('access_token', token);
 
         await DioClient().setAuthToken();
 
@@ -162,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(top: 170),
               child: Card(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withAlpha((0.5*255).round()),
                 elevation: 8,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
@@ -216,19 +209,6 @@ class _LoginPageState extends State<LoginPage> {
                         TextField(
                           controller: _usernameController,
                           decoration: InputDecoration(labelText: "Username", border: OutlineInputBorder()),
-                        ),
-                      ],
-                      if (isSignIn) ...[
-                        SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Checkbox(
-                              value: rememberMe,
-                              onChanged: (val) => setState(() => rememberMe = val ?? false),
-                            ),
-                            Text("Remember me"),
-                          ],
                         ),
                       ],
                       SizedBox(height: 20),

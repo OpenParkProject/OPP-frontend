@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../singleton/dio_client.dart';
 import '../login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -132,10 +131,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = joinDate.isNotEmpty
-        ? DateFormat('yyyy-MM-dd').format(DateTime.parse(joinDate))
-        : "-";
-
     return Scaffold(
       appBar: AppBar(title: Text('My Profile')),
       body: _loading
@@ -228,7 +223,6 @@ class _ProfilePageState extends State<ProfilePage> {
                             DioClient().clearAuthToken();
                             final prefs = await SharedPreferences.getInstance();
                             await prefs.remove('access_token');
-                            await prefs.remove('remember_me');
                             DioClient().clearAuthToken();
 
                             Navigator.pushAndRemoveUntil(

@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:io' show Platform;
-
 import 'login.dart';
 import 'db/db_zones.dart';
 import 'controller/issue_fine.dart';
@@ -21,18 +18,6 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ZoneDB.loadZones();
-
-  if (Platform.isAndroid) {
-    await AndroidAlarmManager.initialize();
-    await AndroidAlarmManager.periodic(
-      const Duration(minutes: 5),
-      0,
-      checkExpiringTickets,
-      wakeup: true,
-      rescheduleOnReboot: true,
-    );
-  }
-
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -48,6 +33,7 @@ void main() async {
 }
 
 class ParkingApp extends StatelessWidget {
+  const ParkingApp({super.key});
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -116,10 +102,33 @@ class StartupRouter extends StatelessWidget {
       await DioClient().setAuthToken();
       final userRes = await DioClient().dio.get('/users/me');
       final username = userRes.data['username'];
+      await syncAndCheckTickets();
       return MainUserHomePage(username: username);
     }
 
     return LoginPage();
+  }
+}
+
+Future<void> syncAndCheckTickets() async {
+  final prefs = await SharedPreferences.getInstance();
+  try {
+    final response = await DioClient().dio.get('/users/me/tickets');
+    final allTickets = List<Map<String, dynamic>>.from(response.data);
+
+    final now = DateTime.now();
+    final stillValid = allTickets.where((t) {
+      final end = DateTime.tryParse(t['end_time'] ?? '');
+      return end != null && end.isAfter(now);
+    }).toList();
+
+    await prefs.setString('local_tickets', jsonEncode(stillValid));
+    await checkExpiringTickets();
+  } catch (e) {
+    assert(() {
+      debugPrint('Error in ticket sync: $e');
+      return true;
+    }());
   }
 }
 
