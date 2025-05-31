@@ -1,5 +1,0 @@
-package com.openpark.app
-
-import io.flutter.embedding.android.FlutterActivity
-
-class MainActivity : FlutterActivity()
