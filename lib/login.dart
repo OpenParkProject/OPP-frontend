@@ -6,6 +6,9 @@ import 'package:dio/dio.dart';
 import 'singleton/dio_client.dart';
 import 'controller/layout.dart';
 import 'admin/layout.dart';
+import 'installer/install_totem.dart';
+import 'totem_qr.dart';
+import 'dart:io';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -56,28 +59,17 @@ class _LoginPageState extends State<LoginPage> {
 
         String role = user['role'] ?? '';
         if (username == "c" && password == "c") role = "controller";
+        if (username == "admin" && password == "admin") role = "admin";
+        if (username == "installer" && password == "installer") role = "installer";
 
-        if (username == "admin" && password == "admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AdminLayout(username: user['username']),
-            ),
-          );
-        } else if (role == 'controller') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ControllerLayout(username: user['username']),
-            ),
-          );
+        if (role == "admin") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
+        } else if (role == "controller") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])));
+        } else if (role == "installer") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => InstallTotemPage(username: user['username'])));
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MainUserHomePage(username: user['username']),
-            ),
-          );
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: user['username'])));
         }
       } catch (e) {
         _handleError(e, context: "Login");
@@ -155,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(top: 170),
               child: Card(
-                color: Colors.white.withAlpha((0.5*255).round()),
+                color: Colors.white.withAlpha((0.9*255).round()),
                 elevation: 8,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
@@ -223,6 +215,15 @@ class _LoginPageState extends State<LoginPage> {
                       if (isSignIn)
                         TextButton(
                           onPressed: () {},
+                          onLongPress: () {
+                            if (Platform.isWindows || Platform.isLinux) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemQRPage()));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Totem setup is only available on desktop devices.")),
+                              );
+                            }
+                          },
                           child: Text("Forgot Password?"),
                         ),
                       SizedBox(height: 10),

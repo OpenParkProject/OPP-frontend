@@ -1,7 +1,12 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
 import 'login.dart';
 import 'db/db_zones.dart';
 import 'controller/issue_fine.dart';
@@ -17,7 +22,15 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tz.initializeTimeZones();
   await ZoneDB.loadZones();
+
+  if (Platform.isAndroid) {
+  final androidInfo = await DeviceInfoPlugin().androidInfo;
+  if (androidInfo.version.sdkInt >= 33) {
+    await Permission.notification.request();
+    }
+  }
   await flutterLocalNotificationsPlugin.initialize(
     const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -34,6 +47,7 @@ void main() async {
 
 class ParkingApp extends StatelessWidget {
   const ParkingApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -45,21 +59,21 @@ class ParkingApp extends StatelessWidget {
           seedColor: Color(0xFF1976D2),
           brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: Color(0xFFF5FAFF),
+        scaffoldBackgroundColor: const Color(0xFFF5FAFF),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: Color(0xFF1976D2),
-            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            foregroundColor: const Color(0xFF1976D2),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ),
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1976D2),
           foregroundColor: Colors.white,
           centerTitle: true,
@@ -68,7 +82,7 @@ class ParkingApp extends StatelessWidget {
       ),
       routes: {
         '/issue_fine': (context) => const IssueFinePage(),
-        '/tickets': (context) => MainUserHomePage(username: "User"),
+        '/tickets': (context) => const MainUserHomePage(username: "User"),
       },
       home: StartupRouter(),
     );
@@ -84,6 +98,12 @@ class StartupRouter extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (snapshot.data == null) {
+          return const Center(child: Text('Something went wrong'));
+        }
         return snapshot.data as Widget;
       },
     );
@@ -91,7 +111,7 @@ class StartupRouter extends StatelessWidget {
 
   Future<Widget> _initAndRoute() async {
     if (debugMode) {
-      return DebugRoleSelector(); // <<-- bypass login in debug mode
+      return const DebugRoleSelector(); // Debug mode
     }
 
     final prefs = await SharedPreferences.getInstance();
@@ -99,16 +119,41 @@ class StartupRouter extends StatelessWidget {
     final remember = prefs.getBool('remember_me') ?? false;
 
     if (remember && token != null) {
-      await DioClient().setAuthToken();
-      final userRes = await DioClient().dio.get('/users/me');
-      final username = userRes.data['username'];
-      await syncAndCheckTickets();
-      return MainUserHomePage(username: username);
+      try {
+        await DioClient().setAuthToken();
+
+        // DEBUG: stampiamo gli header per verificare se il token è ben formato
+        debugPrint('Authorization header: ${DioClient().dio.options.headers['Authorization']}');
+
+        final userRes = await DioClient().dio.get('/users/me');
+
+        // Se il server risponde 200, prosegui
+        if (userRes.statusCode == 200) {
+          final username = userRes.data['username'];
+          await syncAndCheckTickets();
+          return MainUserHomePage(username: username);
+        } else {
+          debugPrint('Server returned ${userRes.statusCode}: ${userRes.data}');
+        }
+
+      } on DioError catch (e) {
+        // Server ha risposto con 400 o simili
+        debugPrint('❌ DioException while calling /users/me');
+        debugPrint('Status: ${e.response?.statusCode}');
+        debugPrint('Body: ${e.response?.data}');
+      } catch (e) {
+        // Errore non previsto
+        debugPrint('❌ Generic error in _initAndRoute: $e');
+      }
+
+      // In ogni caso, se qualcosa va storto, pulisci il token
+      await prefs.remove('access_token');
+      await prefs.remove('remember_me');
     }
 
     return LoginPage();
   }
-}
+
 
 Future<void> syncAndCheckTickets() async {
   final prefs = await SharedPreferences.getInstance();
@@ -192,4 +237,5 @@ Future<void> checkExpiringTickets() async {
   }
 
   await prefs.setStringList('notified_ticket_ids', notifiedIds);
+  }
 }

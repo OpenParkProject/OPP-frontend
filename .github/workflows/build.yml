@@ -96,7 +96,16 @@ jobs:
 
       - name: Package Android APK
         run: |
-          cp build/app/outputs/flutter-apk/app-release.apk opp-android-${{ env.TAG_NAME }}.apk
+          echo "Listing APK folder contents:"
+          ls -l build/app/outputs/flutter-apk/
+
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk opp-android-${{ env.TAG_NAME }}.apk
+            echo "APK copied successfully."
+          else
+            echo "APK file not found. Build may have failed."
+            exit 1
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
