@@ -1,11 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'admin/layout.dart';
+import 'config.dart';
+import 'controller/layout.dart';
 import 'driver/layout.dart';
 import 'driver/zone_selection.dart';
-import 'package:dio/dio.dart';
 import 'singleton/dio_client.dart';
-import 'controller/layout.dart';
-import 'admin/layout.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -40,10 +42,10 @@ class _LoginPageState extends State<LoginPage> {
 
     if (isSignIn) {
       try {
-        final response = await dio.post('/login', data: {
-          'username': username,
-          'password': password,
-        });
+        final response = await dio.post(
+          '/login',
+          data: {'username': username, 'password': password},
+        );
 
         final user = response.data['user'];
         final token = response.data['access_token'];
@@ -62,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
         _showMessage("Login successful: Welcome, ${user['username']}!");
 
         String role = user['role'] ?? '';
+        globalRole = role; // Store globally for later use
         if (username == "c" && password == "c") role = "controller";
 
         if (username == "admin" && password == "admin") {
@@ -95,7 +98,14 @@ class _LoginPageState extends State<LoginPage> {
       final surname = _surnameController.text.trim();
       final email = _emailController.text.trim();
 
-      if ([name, surname, username, email, password, confirm].any((e) => e.isEmpty)) {
+      if ([
+        name,
+        surname,
+        username,
+        email,
+        password,
+        confirm,
+      ].any((e) => e.isEmpty)) {
         _showMessage("Please fill in all fields");
         return;
       }
@@ -114,7 +124,7 @@ class _LoginPageState extends State<LoginPage> {
             "username": username,
             "email": email,
             "password": password,
-            "role": "driver"
+            "role": "driver",
           },
         );
 
@@ -164,7 +174,9 @@ class _LoginPageState extends State<LoginPage> {
               child: Card(
                 color: Colors.white.withOpacity(0.9),
                 elevation: 8,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
@@ -180,42 +192,67 @@ class _LoginPageState extends State<LoginPage> {
                           });
                         },
                         children: [
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Text("Sign Up")),
-                          Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: Text("Sign In")),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Text("Sign Up"),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            child: Text("Sign In"),
+                          ),
                         ],
                       ),
                       SizedBox(height: 20),
                       TextField(
-                        controller: isSignIn ? _usernameController : _emailController,
-                        decoration: InputDecoration(labelText: isSignIn ? "Username" : "Email", border: OutlineInputBorder()),
+                        controller:
+                            isSignIn ? _usernameController : _emailController,
+                        decoration: InputDecoration(
+                          labelText: isSignIn ? "Username" : "Email",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                       SizedBox(height: 10),
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: InputDecoration(labelText: "Password", border: OutlineInputBorder()),
+                        decoration: InputDecoration(
+                          labelText: "Password",
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                       if (!isSignIn) ...[
                         SizedBox(height: 10),
                         TextField(
                           controller: _confirmPasswordController,
                           obscureText: true,
-                          decoration: InputDecoration(labelText: "Confirm Password", border: OutlineInputBorder()),
+                          decoration: InputDecoration(
+                            labelText: "Confirm Password",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         SizedBox(height: 10),
                         TextField(
                           controller: _nameController,
-                          decoration: InputDecoration(labelText: "Name", border: OutlineInputBorder()),
+                          decoration: InputDecoration(
+                            labelText: "Name",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         SizedBox(height: 10),
                         TextField(
                           controller: _surnameController,
-                          decoration: InputDecoration(labelText: "Surname", border: OutlineInputBorder()),
+                          decoration: InputDecoration(
+                            labelText: "Surname",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         SizedBox(height: 10),
                         TextField(
                           controller: _usernameController,
-                          decoration: InputDecoration(labelText: "Username", border: OutlineInputBorder()),
+                          decoration: InputDecoration(
+                            labelText: "Username",
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ],
                       if (isSignIn) ...[
@@ -225,7 +262,9 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             Checkbox(
                               value: rememberMe,
-                              onChanged: (val) => setState(() => rememberMe = val ?? false),
+                              onChanged:
+                                  (val) =>
+                                      setState(() => rememberMe = val ?? false),
                             ),
                             Text("Remember me"),
                           ],
@@ -236,7 +275,9 @@ class _LoginPageState extends State<LoginPage> {
                         onPressed: _handleAuth,
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         child: Text(isSignIn ? "Sign In" : "Create Account"),
                       ),
@@ -248,23 +289,32 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(height: 10),
                       ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => ParkingZoneSelectionPage()));
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ParkingZoneSelectionPage(),
+                            ),
+                          );
                         },
                         icon: Icon(Icons.local_parking_outlined),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
                           minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        label: Text("Pay with plate (without login/registration)"),
+                        label: Text(
+                          "Pay with plate (without login/registration)",
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );

@@ -1,9 +1,9 @@
-import 'package:openpark/admin/layout.dart';
-
-import '../login.dart';
 import 'package:flutter/material.dart';
-import '../driver/layout.dart';
+import 'package:openpark/config.dart';
+
 import '../controller/layout.dart';
+import '../driver/layout.dart';
+import '../login.dart';
 // import '../admin/admin_dashboard.dart';
 
 class DebugRoleSelector extends StatelessWidget {
@@ -11,7 +11,7 @@ class DebugRoleSelector extends StatelessWidget {
 
   void _navigateToRole(BuildContext context, String role) {
     Widget destination;
-
+    globalRole = role; // Set the global role for the app
     switch (role) {
       case 'driver':
         destination = const MainUserHomePage(username: 'debug_driver');
@@ -20,7 +20,8 @@ class DebugRoleSelector extends StatelessWidget {
         destination = const ControllerLayout(username: 'debug_controller');
         break;
       case 'admin':
-        destination = AdminLayout(username: 'debug_admin');
+        // destination = AdminLayout(username: 'debug_admin');
+        destination = ControllerLayout(username: 'debug_admin');
         break;
       default:
         destination = LoginPage();

@@ -1,9 +1,11 @@
 //import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:openpark/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+import '../admin/layout.dart';
 import '../login.dart';
 import 'chalked_cars.dart';
 import 'fines_issued.dart';
@@ -78,6 +80,24 @@ class _ControllerLayoutState extends State<ControllerLayout> {
     );
   }
 
+  void _handleAdminAccess() {
+    if (globalRole == 'admin') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AdminLayout(username: 'debug_admin'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Access denied: You are not an admin.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,13 +105,18 @@ class _ControllerLayoutState extends State<ControllerLayout> {
         toolbarHeight: 60,
         title: LayoutBuilder(
           builder: (context, constraints) {
+            final interfaceTitle =
+                globalRole == 'admin'
+                    ? '👨🏻‍💻 Admin Interface'
+                    : '👮 Controller Interface';
             if (constraints.maxWidth < 360) {
               return Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      '👮 Controller Interface',
+                    Text(
+                      // '👮 Controller Interface',
+                      interfaceTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -108,10 +133,11 @@ class _ControllerLayoutState extends State<ControllerLayout> {
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Align(
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '👮 Controller Interface',
+                      // '👮 Controller Interface',
+                      interfaceTitle,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -145,6 +171,19 @@ class _ControllerLayoutState extends State<ControllerLayout> {
         ],
       ),
       body: _pages[_selectedIndex],
+      floatingActionButton: Tooltip(
+        message:
+            globalRole == 'admin'
+                ? 'Access admin dedicated page'
+                : 'Only admins can access this page',
+        child: FloatingActionButton(
+          backgroundColor:
+              globalRole == 'admin' ? Colors.blue : Colors.grey.shade400,
+          onPressed: globalRole == 'admin' ? _handleAdminAccess : null,
+          child: const Icon(Icons.admin_panel_settings),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
