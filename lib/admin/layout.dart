@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:openpark/admin/driver_management.dart';
 import 'package:openpark/admin/ticket_management/tickets.dart';
-import 'package:openpark/driver/zone_selection.dart';
+import 'package:openpark/admin/user_management.dart';
+import 'package:openpark/admin/zone_statues.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../login.dart';
@@ -31,14 +32,14 @@ class _AdminLayoutState extends State<AdminLayout> {
   final List<Widget> _pages = [
     // PlaceholderWidget(title: "Drivers management"),
     DriversManagementPage(),
-
-    PlaceholderWidget(title: "Controllers management"),
+    // PlaceholderWidget(title: "Controllers management"),
+    UsersManagementPage(),
     PlaceholderWidget(title: "City fines"),
     PlaceholderWidget(title: "Totem locations"),
     TicketManagementPage(),
     // PlaceholderWidget(title: "City tickets"),
     PlaceholderWidget(title: "Plate check (as controller)"),
-    ParkingZoneSelectionPage(),
+    ParkingZoneStatusPage(),
     // PlaceholderWidget(title: "Zone pricing and status"),
   ];
 
