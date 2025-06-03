@@ -525,7 +525,7 @@ packages:
     description:
       path: "."
       ref: dart-dio-client
-      resolved-ref: a11798dc4b5863d4b1ccafd8f3c884e8acc119e9
+      resolved-ref: "435157310063530f2d1add82922b459ff6a3faf3"
       url: "https://github.com/OpenParkProject/OPP-common.git"
     source: git
     version: "1.0.0"
