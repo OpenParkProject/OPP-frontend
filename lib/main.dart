@@ -1,9 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
 
 import 'login.dart';
 import 'db/db_zones.dart';
@@ -22,15 +24,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ZoneDB.loadZones();
 
-  if (Platform.isAndroid) {
-    await AndroidAlarmManager.initialize();
-    await AndroidAlarmManager.periodic(
-      const Duration(minutes: 5),
-      0,
-      checkExpiringTickets,
-      wakeup: true,
-      rescheduleOnReboot: true,
-    );
+  if (kIsWeb) {
+    // Web-specific code
+  } else if (Platform.isAndroid) {
+      await AndroidAlarmManager.initialize();
+      await AndroidAlarmManager.periodic(
+        const Duration(minutes: 5),
+        0,
+        checkExpiringTickets,
+        wakeup: true,
+        rescheduleOnReboot: true,
+      );
+  } else {
+    // Other platforms
   }
 
   await flutterLocalNotificationsPlugin.initialize(
