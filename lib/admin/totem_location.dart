@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+class ParkingLot {
+  final String name;
+  final LatLng location;
+  ParkingLot(this.name, this.location);
+}
+
 class TotemLocationPage extends StatefulWidget {
   const TotemLocationPage({super.key});
 
@@ -12,16 +18,15 @@ class TotemLocationPage extends StatefulWidget {
 class _TotemLocationPageState extends State<TotemLocationPage> {
   final LatLng _center = LatLng(45.064557, 7.658081);
 
-  final List<LatLng> _parkingLocations = [
-    LatLng(45.060447, 7.654317),
-    LatLng(45.058225, 7.653149),
-    LatLng(45.068145, 7.657488),
-    LatLng(45.072882, 7.666789),
-    LatLng(45.073395, 7.671776),
-    LatLng(45.067507, 7.672143),
-    LatLng(45.062762, 7.677981),
-    LatLng(45.066525, 7.681563),
-    LatLng(45.065594, 7.681796),
+  final List<ParkingLot> _parkingLots = [
+    ParkingLot('Porta Nuova', LatLng(45.060447, 7.654317)),
+    ParkingLot('San Salvario', LatLng(45.058225, 7.653149)),
+    ParkingLot('Piazza Statuto', LatLng(45.068145, 7.657488)),
+    ParkingLot('Crocetta', LatLng(45.072882, 7.666789)),
+    ParkingLot('Politecnico', LatLng(45.073395, 7.671776)),
+    ParkingLot('Lingotto', LatLng(45.067507, 7.672143)),
+    ParkingLot('Valentino', LatLng(45.062762, 7.677981)),
+    ParkingLot('Porta Susa', LatLng(45.066525, 7.681563)),
   ];
 
   @override
@@ -43,16 +48,14 @@ class _TotemLocationPageState extends State<TotemLocationPage> {
           ),
           MarkerLayer(
             markers:
-                _parkingLocations
-                    .asMap()
-                    .entries
+                _parkingLots
                     .map(
-                      (entry) => Marker(
+                      (lot) => Marker(
                         width: 40,
                         height: 40,
-                        point: entry.value,
+                        point: lot.location,
                         child: Tooltip(
-                          message: 'Totems ${entry.key + 1}',
+                          message: lot.name,
                           child: const Icon(
                             Icons.local_parking,
                             color: Colors.blue,
