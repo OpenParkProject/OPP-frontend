@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
@@ -34,13 +36,21 @@ void main() async {
         wakeup: true,
         rescheduleOnReboot: true,
       );
+  } else if (UniversalPlatform.isLinux) {
+    Timer.periodic(const Duration(minutes: 5), (_) {
+      checkExpiringTickets();
+    });
   } else {
-    // Other platforms
+    throw UnsupportedError('Unsupported platform');
   }
 
   await flutterLocalNotificationsPlugin.initialize(
-    const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    InitializationSettings(
+      android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
+      // Add Linux settings
+      linux: const LinuxInitializationSettings(
+        defaultActionName: 'Open notification',
+      ),
     ),
     onDidReceiveNotificationResponse: (details) {
       if (details.payload == 'open_ticket') {
@@ -150,7 +160,7 @@ Future<void> checkExpiringTickets() async {
         '⏰ Ticket expiring soon!',
         'Expires at ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
         NotificationDetails(
-          android: AndroidNotificationDetails(
+          android: UniversalPlatform.isAndroid ? AndroidNotificationDetails(
             'ticket_channel',
             'Ticket Notifications',
             channelDescription: 'Notify when ticket is about to expire',
@@ -159,7 +169,12 @@ Future<void> checkExpiringTickets() async {
             visibility: NotificationVisibility.public,
             usesChronometer: true,
             showWhen: true,
-          ),
+          ) : null,
+          linux: UniversalPlatform.isLinux ? LinuxNotificationDetails(
+            defaultActionName: "Open",
+            suppressSound: false,
+            urgency: LinuxNotificationUrgency.normal,
+          ) : null,
         ),
         payload: 'open_ticket',
       );
@@ -168,18 +183,23 @@ Future<void> checkExpiringTickets() async {
 
     if (diff < 0 && diff >= -5 && !notifiedIds.contains("expired_$id")) {
       await flutterLocalNotificationsPlugin.show(
-        id.hashCode,
+        id.hashCode + 1000, // Different ID to avoid conflicts
         '⚠️ Ticket expired!',
         'Your parking time ended ${-diff} minutes ago.',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
+        NotificationDetails(
+          android: UniversalPlatform.isAndroid ? AndroidNotificationDetails(
             'expired_channel',
             'Expired Tickets',
             channelDescription: 'Notify when ticket has just expired',
             importance: Importance.max,
             priority: Priority.high,
             visibility: NotificationVisibility.public,
-          ),
+          ) : null,
+          linux: UniversalPlatform.isLinux ? LinuxNotificationDetails(
+            defaultActionName: "Open",
+            suppressSound: false,
+            urgency: LinuxNotificationUrgency.critical,
+          ) : null,
         ),
         payload: 'open_ticket',
       );
