@@ -1,1 +1,2 @@
-const bool debugMode = false;
+const bool debugMode = true;
+var globalRole = ''; // Default role, can be changed in debug mode

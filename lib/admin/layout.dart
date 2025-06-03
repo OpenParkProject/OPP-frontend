@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:openpark/admin/driver_management.dart';
+import 'package:openpark/admin/ticket_management/tickets.dart';
+import 'package:openpark/admin/totem_location.dart';
+import 'package:openpark/admin/user_management.dart';
+import 'package:openpark/admin/zone_statues.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../login.dart';
 
 class AdminLayout extends StatefulWidget {
@@ -21,17 +27,22 @@ class _AdminLayoutState extends State<AdminLayout> {
     "Totems",
     "Tickets",
     "Check Plate",
-    "Zones"
+    "Zones",
   ];
 
   final List<Widget> _pages = [
-    PlaceholderWidget(title: "Drivers management"),
-    PlaceholderWidget(title: "Controllers management"),
+    // PlaceholderWidget(title: "Drivers management"),
+    DriversManagementPage(),
+    // PlaceholderWidget(title: "Controllers management"),
+    UsersManagementPage(),
     PlaceholderWidget(title: "City fines"),
-    PlaceholderWidget(title: "Totem locations"),
-    PlaceholderWidget(title: "City tickets"),
+    TotemLocationPage(),
+    // PlaceholderWidget(title: "Totem locations"),
+    TicketManagementPage(),
+    // PlaceholderWidget(title: "City tickets"),
     PlaceholderWidget(title: "Plate check (as controller)"),
-    PlaceholderWidget(title: "Zone pricing and status")
+    ParkingZoneStatusPage(),
+    // PlaceholderWidget(title: "Zone pricing and status"),
   ];
 
   final List<Icon> _icons = [
@@ -101,7 +112,8 @@ class _AdminLayoutState extends State<AdminLayout> {
             items: List.generate(_titles.length, (index) {
               return BottomNavigationBarItem(
                 icon: _icons[index],
-                label: !isCompact || index == _selectedIndex ? _titles[index] : '',
+                label:
+                    !isCompact || index == _selectedIndex ? _titles[index] : '',
               );
             }),
           );
