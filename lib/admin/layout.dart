@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:openpark/admin/driver_management.dart';
 import 'package:openpark/admin/ticket_management/tickets.dart';
+import 'package:openpark/admin/totem_location.dart';
 import 'package:openpark/admin/user_management.dart';
 import 'package:openpark/admin/zone_statues.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,7 +36,8 @@ class _AdminLayoutState extends State<AdminLayout> {
     // PlaceholderWidget(title: "Controllers management"),
     UsersManagementPage(),
     PlaceholderWidget(title: "City fines"),
-    PlaceholderWidget(title: "Totem locations"),
+    TotemLocationPage(),
+    // PlaceholderWidget(title: "Totem locations"),
     TicketManagementPage(),
     // PlaceholderWidget(title: "City tickets"),
     PlaceholderWidget(title: "Plate check (as controller)"),
