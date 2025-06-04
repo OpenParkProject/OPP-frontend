@@ -1,3 +1,4 @@
+// ticket_management_page.dart
 import 'package:flutter/material.dart';
 import 'package:openpark/admin/utils/url_dao.dart';
 
@@ -22,38 +23,124 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  bool _isValidId(String input) {
-    return int.tryParse(input) != null;
-  }
+  bool _isValidId(String input) => int.tryParse(input) != null;
 
   Future<void> _getTickets() async {
     setState(() => _isLoading = true);
     final id = _idController.text.trim();
-
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final response = await dio.get(ticketUrl);
+        final res = await dio.get(ticketUrl);
         setState(() {
-          _tickets = response.data;
+          _tickets = res.data;
           _singleTicket = null;
         });
       } else if (_isValidId(id)) {
-        final response = await dio.get('$ticketUrl/$id');
+        final res = await dio.get('$ticketUrl/$id');
         setState(() {
-          _singleTicket = response.data;
+          _singleTicket = res.data;
           _tickets = [];
         });
       } else {
-        _showSnackbar('Please enter a valid numeric ID');
+        _showSnackbar('Invalid ID');
       }
-    } catch (e) {
+    } catch (_) {
       _showSnackbar('Error fetching ticket(s)');
     }
-
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _deleteTicket() async {
+    final id = _idController.text.trim();
+    if (!_isValidId(id)) {
+      _showSnackbar('Invalid ID');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await DioClient().setAuthToken();
+      final res = await DioClient().dio.delete('$ticketUrl/$id');
+      if (res.statusCode == 200) {
+        _showSnackbar('Ticket deleted');
+        _getTickets();
+      } else {
+        _showSnackbar('Failed to delete');
+      }
+    } catch (_) {
+      _showSnackbar('Error deleting ticket');
+    }
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _editTicket() async {
+    final id = _idController.text.trim();
+    if (!_isValidId(id)) {
+      _showSnackbar('Invalid ID');
+      return;
+    }
+
+    Map<String, TextEditingController> fields = {
+      'plate': TextEditingController(),
+      'price': TextEditingController(),
+      'paid': TextEditingController(),
+    };
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Ticket'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                fields.entries.map((entry) {
+                  return TextField(
+                    controller: entry.value,
+                    decoration: InputDecoration(labelText: entry.key),
+                  );
+                }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await DioClient().setAuthToken();
+                  final updatedData = {
+                    'plate': fields['plate']!.text.trim(),
+                    'price':
+                        double.tryParse(fields['price']!.text.trim()) ?? 0.0,
+                    'paid': fields['paid']!.text.trim().toLowerCase() == 'true',
+                  };
+
+                  final res = await DioClient().dio.patch(
+                    '$ticketUrl/$id',
+                    data: updatedData,
+                  );
+                  if (res.statusCode == 200) {
+                    _showSnackbar('Updated');
+                    Navigator.pop(context);
+                    _getTickets();
+                  } else {
+                    _showSnackbar('Update failed');
+                  }
+                } catch (_) {
+                  _showSnackbar('Error updating ticket');
+                }
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildTicketCard(Map<String, dynamic> ticket) {
@@ -73,6 +160,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
   @override
   Widget build(BuildContext context) {
     final inputId = _idController.text.trim();
+    final validId = _isValidId(inputId);
 
     return Scaffold(
       body: Padding(
@@ -81,15 +169,27 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
           children: [
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(
-                labelText: 'Please enter ticket ID',
-              ),
+              decoration: const InputDecoration(labelText: 'Enter Ticket ID'),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _getTickets,
-              child: const Text('Get Tickets'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _getTickets,
+                  child: const Text('Get'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: validId ? _deleteTicket : null,
+                  child: const Text('Delete'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: validId ? _editTicket : null,
+                  child: const Text('Edit'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(

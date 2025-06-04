@@ -1,3 +1,4 @@
+// fine_management_page.dart
 import 'package:flutter/material.dart';
 import 'package:openpark/admin/utils/url_dao.dart';
 
@@ -22,38 +23,124 @@ class _FineManagementPageState extends State<FineManagementPage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  bool _isValidId(String input) {
-    return int.tryParse(input) != null;
-  }
+  bool _isValidId(String input) => int.tryParse(input) != null;
 
   Future<void> _getFines() async {
     setState(() => _isLoading = true);
     final id = _idController.text.trim();
-
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final response = await dio.get(fineUrl);
+        final res = await dio.get(fineUrl);
         setState(() {
-          _fines = response.data;
+          _fines = res.data;
           _singleFine = null;
         });
       } else if (_isValidId(id)) {
-        final response = await dio.get('$fineUrl/$id');
+        final res = await dio.get('$fineUrl/$id');
         setState(() {
-          _singleFine = response.data;
+          _singleFine = res.data;
           _fines = [];
         });
       } else {
-        _showSnackbar('Please enter a valid numeric ID');
+        _showSnackbar('Invalid ID');
       }
-    } catch (e) {
+    } catch (_) {
       _showSnackbar('Error fetching fine(s)');
     }
-
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _deleteFine() async {
+    final id = _idController.text.trim();
+    if (!_isValidId(id)) {
+      _showSnackbar('Invalid ID');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await DioClient().setAuthToken();
+      final res = await DioClient().dio.delete('$fineUrl/$id');
+      if (res.statusCode == 200) {
+        _showSnackbar('Fine deleted');
+        _getFines();
+      } else {
+        _showSnackbar('Failed to delete');
+      }
+    } catch (_) {
+      _showSnackbar('Error deleting fine');
+    }
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _editFine() async {
+    final id = _idController.text.trim();
+    if (!_isValidId(id)) {
+      _showSnackbar('Invalid ID');
+      return;
+    }
+
+    Map<String, TextEditingController> fields = {
+      'plate': TextEditingController(),
+      'amount': TextEditingController(),
+      'paid': TextEditingController(),
+    };
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Fine'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children:
+                fields.entries.map((entry) {
+                  return TextField(
+                    controller: entry.value,
+                    decoration: InputDecoration(labelText: entry.key),
+                  );
+                }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await DioClient().setAuthToken();
+                  final updatedData = {
+                    'plate': fields['plate']!.text.trim(),
+                    'amount':
+                        double.tryParse(fields['amount']!.text.trim()) ?? 0.0,
+                    'paid': fields['paid']!.text.trim().toLowerCase() == 'true',
+                  };
+
+                  final res = await DioClient().dio.patch(
+                    '$fineUrl/$id',
+                    data: updatedData,
+                  );
+                  if (res.statusCode == 200) {
+                    _showSnackbar('Updated');
+                    Navigator.pop(context);
+                    _getFines();
+                  } else {
+                    _showSnackbar('Update failed');
+                  }
+                } catch (_) {
+                  _showSnackbar('Error updating fine');
+                }
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildFineCard(Map<String, dynamic> fine) {
@@ -71,6 +158,7 @@ class _FineManagementPageState extends State<FineManagementPage> {
   @override
   Widget build(BuildContext context) {
     final inputId = _idController.text.trim();
+    final validId = _isValidId(inputId);
 
     return Scaffold(
       body: Padding(
@@ -79,15 +167,27 @@ class _FineManagementPageState extends State<FineManagementPage> {
           children: [
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(
-                labelText: 'Please enter fine ID',
-              ),
+              decoration: const InputDecoration(labelText: 'Enter Fine ID'),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _getFines,
-              child: const Text('Get Fines'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _getFines,
+                  child: const Text('Get'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: validId ? _deleteFine : null,
+                  child: const Text('Delete'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: validId ? _editFine : null,
+                  child: const Text('Edit'),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Expanded(
