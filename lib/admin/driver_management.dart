@@ -228,7 +228,7 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
               }),
               Divider(),
             ],
-            Text("Add a new vehicle"),
+            Text("Modify a vehicle"),
             TextField(
               controller: _plateController,
               decoration: InputDecoration(labelText: "License Plate"),
@@ -242,7 +242,7 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
               decoration: InputDecoration(labelText: "Model"),
             ),
             SizedBox(height: 10),
-            ElevatedButton(onPressed: _addCar, child: Text("Add Vehicle")),
+            ElevatedButton(onPressed: _addCar, child: Text("Modify Vehicle")),
             if (_feedbackMessage != null) ...[
               SizedBox(height: 20),
               Text(_feedbackMessage!, style: TextStyle(color: Colors.blue)),
