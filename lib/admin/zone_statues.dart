@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+
+import '../db/db_zones.dart';
+
+class ParkingZoneStatusPage extends StatefulWidget {
+  @override
+  State<ParkingZoneStatusPage> createState() => _ParkingZoneStatusPageState();
+}
+
+class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
+  double? userLat;
+  double? userLong;
+  List<Map<String, dynamic>> zonesWithDistance = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _determinePosition();
+  }
+
+  Future<void> _determinePosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await Geolocator.openLocationSettings();
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.always &&
+          permission != LocationPermission.whileInUse) {
+        return;
+      }
+    }
+
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+    setState(() {
+      userLat = position.latitude;
+      userLong = position.longitude;
+    });
+
+    _calculateDistances();
+  }
+
+  void _calculateDistances() {
+    List<ParkingZone> zones = ZoneDB.zones;
+    zonesWithDistance =
+        zones.map((zone) {
+          double distanceMeters = Geolocator.distanceBetween(
+            userLat!,
+            userLong!,
+            zone.latitude,
+            zone.longitude,
+          );
+          return {'zone': zone, 'distance': distanceMeters};
+        }).toList();
+
+    zonesWithDistance.sort((a, b) => a['distance'].compareTo(b['distance']));
+
+    setState(() {}); // aggiorna l'interfaccia
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body:
+          userLat == null || userLong == null
+              ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      "Determining your position to find nearby parking zones...",
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+              : Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Your position:",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text("$userLat, $userLong\n"),
+                    Text(
+                      "Available zones (nearest first):",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 10),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: zonesWithDistance.length,
+                        itemBuilder: (context, index) {
+                          final zone =
+                              zonesWithDistance[index]['zone'] as ParkingZone;
+                          final distance =
+                              zonesWithDistance[index]['distance'] as double;
+                          return ListTile(
+                            title: Text(zone.name),
+                            subtitle: Text(
+                              "€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km",
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+    );
+  }
+}

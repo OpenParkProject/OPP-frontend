@@ -13,7 +13,7 @@ class DebugRoleSelector extends StatelessWidget {
 
   void _navigateToRole(BuildContext context, String role) {
     Widget destination;
-
+    globalRole = role; // Set the global role for the app
     switch (role) {
       case 'driver':
         destination = const MainUserHomePage(username: 'debug_driver');
