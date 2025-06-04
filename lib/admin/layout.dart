@@ -34,7 +34,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     // PlaceholderWidget(title: "Drivers management"),
     DriversManagementPage(),
     // PlaceholderWidget(title: "Controllers management"),
-    UsersManagementPage(),
+    UserManagementPage(),
     PlaceholderWidget(title: "City fines"),
     TotemLocationPage(),
     // PlaceholderWidget(title: "Totem locations"),

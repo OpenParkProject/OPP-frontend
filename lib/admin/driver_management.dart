@@ -125,7 +125,6 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("My Vehicles")),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(

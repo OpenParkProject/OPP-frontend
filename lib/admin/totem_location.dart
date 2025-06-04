@@ -32,7 +32,6 @@ class _TotemLocationPageState extends State<TotemLocationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Totem Locations')),
       body: FlutterMap(
         options: MapOptions(
           center: _center,
