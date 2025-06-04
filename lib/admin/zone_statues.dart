@@ -68,7 +68,6 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Select Parking Zone')),
       body:
           userLat == null || userLong == null
               ? Center(
@@ -113,8 +112,6 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                             subtitle: Text(
                               "€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km",
                             ),
-                            trailing: Icon(Icons.arrow_forward_ios),
-                            onTap: () {},
                           );
                         },
                       ),
