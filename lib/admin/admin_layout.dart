@@ -31,13 +31,12 @@ class _AdminLayoutState extends State<AdminLayout> {
   ];
 
   final List<Widget> _pages = [
-    PlaceholderWidget(title: "Controllers management"),
-    PlaceholderWidget(title: "City fines"),
-    PlaceholderWidget(title: "Totem locations"),
-    PlaceholderWidget(title: "City tickets"),
-    PlaceholderWidget(title: "Plate check (as controller)"),
+    DriversManagementPage(),
+    FineManagementPage(),
+    TotemLocationPage(),
+    TicketManagementPage(),
+    UserManagementPage(),
     ParkingZoneStatusPage(),
-    // PlaceholderWidget(title: "Zone pricing and status"),
   ];
 
   final List<Icon> _icons = [
