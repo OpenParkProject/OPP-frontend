@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:openpark/config.dart';
 import 'package:openpark/installer/install_totem.dart';
 
 import '../login.dart';

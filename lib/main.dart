@@ -173,98 +173,14 @@ class ParkingApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFF5FAFF),
         elevatedButtonTheme: ElevatedButtonThemeData(
-
-Future<void> syncAndCheckTickets() async {
-  final prefs = await SharedPreferences.getInstance();
-  try {
-    final response = await DioClient().dio.get('/users/me/tickets');
-    final allTickets = List<Map<String, dynamic>>.from(response.data);
-
-    final now = DateTime.now();
-    final stillValid = allTickets.where((t) {
-      final end = DateTime.tryParse(t['end_time'] ?? '');
-      return end != null && end.isAfter(now);
-    }).toList();
-
-    await prefs.setString('local_tickets', jsonEncode(stillValid));
-    await checkExpiringTickets();
-  } catch (e) {
-    assert(() {
-      debugPrint('Error in ticket sync: $e');
-      return true;
-    }());
-  }
-}
-
-Future<void> checkExpiringTickets() async {
-  final prefs = await SharedPreferences.getInstance();
-  final raw = prefs.getString('local_tickets');
-  if (raw == null) return;
-
-  final List<dynamic> tickets = jsonDecode(raw);
-  final now = DateTime.now();
-  final notifiedIds = prefs.getStringList('notified_ticket_ids') ?? [];
-
-  for (final t in tickets) {
-    final id = t['id'].toString();
-    final end = DateTime.tryParse(t['end_time']);
-    if (end == null) continue;
-
-    final diff = end.difference(now).inMinutes;
-
-    if (diff <= 10 && diff >= 0 && !notifiedIds.contains(id)) {
-      await flutterLocalNotificationsPlugin.show(
-        id.hashCode,
-        '⏰ Ticket expiring soon!',
-        'Expires at ${end.hour.toString().padLeft(2, '0')}:${end.minute.toString().padLeft(2, '0')}',
-        NotificationDetails(
-          android: UniversalPlatform.isAndroid ? AndroidNotificationDetails(
-            'ticket_channel',
-            'Ticket Notifications',
-            channelDescription: 'Notify when ticket is about to expire',
-            importance: Importance.max,
-            priority: Priority.high,
-            visibility: NotificationVisibility.public,
-            usesChronometer: true,
-            showWhen: true,
-          ) : null,
-          linux: UniversalPlatform.isLinux ? LinuxNotificationDetails(
-            defaultActionName: "Open",
-            suppressSound: false,
-            urgency: LinuxNotificationUrgency.normal,
-          ) : null,
+          style: ElevatedButton.styleFrom(
+            foregroundColor: Colors.white,
+            backgroundColor: Color(0xFF1976D2),
+          ),
         ),
-        payload: 'open_ticket',
-      );
-      notifiedIds.add(id);
-    }
-
-    if (diff < 0 && diff >= -5 && !notifiedIds.contains("expired_$id")) {
-      await flutterLocalNotificationsPlugin.show(
-        id.hashCode + 1000, // Different ID to avoid conflicts
-        '⚠️ Ticket expired!',
-        'Your parking time ended ${-diff} minutes ago.',
-        NotificationDetails(
-          android: UniversalPlatform.isAndroid ? AndroidNotificationDetails(
-            'expired_channel',
-            'Expired Tickets',
-            channelDescription: 'Notify when ticket has just expired',
-            importance: Importance.max,
-            priority: Priority.high,
-            visibility: NotificationVisibility.public,
-          ) : null,
-          linux: UniversalPlatform.isLinux ? LinuxNotificationDetails(
-            defaultActionName: "Open",
-            suppressSound: false,
-            urgency: LinuxNotificationUrgency.critical,
-          ) : null,
-        ),
-        payload: 'open_ticket',
-      );
-      notifiedIds.add("expired_$id");
-    }
-  }
-
-  await prefs.setStringList('notified_ticket_ids', notifiedIds);
+      ),
+      // Add your routes here
+      home: LoginPage(), // Assuming LoginPage is the starting point
+    );
   }
 }
