@@ -27,7 +27,6 @@ class ZoneDB {
         );
       }).toList();
     } catch (e) {
-      print('Failed to load zones: $e');
       zones = [];
     }
   }

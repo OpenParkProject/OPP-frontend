@@ -8,6 +8,9 @@ import 'controller/layout.dart';
 import 'driver/layout.dart';
 import 'driver/zone_selection.dart';
 import 'singleton/dio_client.dart';
+import 'installer/install_totem.dart';
+import 'totem_qr.dart';
+import 'dart:io';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -16,7 +19,6 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool isSignIn = true;
-  bool rememberMe = true;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -51,13 +53,7 @@ class _LoginPageState extends State<LoginPage> {
         final token = response.data['access_token'];
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('remember_me', rememberMe);
-
-        if (rememberMe) {
-          await prefs.setString('access_token', token);
-        } else {
-          await prefs.remove('access_token');
-        }
+        await prefs.setString('access_token', token);
 
         await DioClient().setAuthToken();
 
@@ -66,28 +62,17 @@ class _LoginPageState extends State<LoginPage> {
         String role = user['role'] ?? '';
         globalRole = role; // Store globally for later use
         if (username == "c" && password == "c") role = "controller";
+        if (username == "admin" && password == "admin") role = "admin";
+        if (username == "installer" && password == "installer") role = "installer";
 
-        if (username == "admin" && password == "admin") {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AdminLayout(username: user['username']),
-            ),
-          );
-        } else if (role == 'controller') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ControllerLayout(username: user['username']),
-            ),
-          );
+        if (role == "admin") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
+        } else if (role == "controller") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])));
+        } else if (role == "installer") {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => InstallTotemPage(username: user['username'])));
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MainUserHomePage(username: user['username']),
-            ),
-          );
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: user['username'])));
         }
       } catch (e) {
         _handleError(e, context: "Login");
@@ -172,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(top: 170),
               child: Card(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withAlpha((0.9*255).round()),
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -255,21 +240,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ],
-                      if (isSignIn) ...[
-                        SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Checkbox(
-                              value: rememberMe,
-                              onChanged:
-                                  (val) =>
-                                      setState(() => rememberMe = val ?? false),
-                            ),
-                            Text("Remember me"),
-                          ],
-                        ),
-                      ],
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: _handleAuth,
@@ -284,6 +254,15 @@ class _LoginPageState extends State<LoginPage> {
                       if (isSignIn)
                         TextButton(
                           onPressed: () {},
+                          onLongPress: () {
+                            if (Platform.isWindows || Platform.isLinux) {
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemQRPage()));
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Totem setup is only available on desktop devices.")),
+                              );
+                            }
+                          },
                           child: Text("Forgot Password?"),
                         ),
                       SizedBox(height: 10),

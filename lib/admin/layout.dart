@@ -22,7 +22,6 @@ class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
 
   final List<String> _titles = [
-    "Drivers",
     "Controllers",
     "Fines",
     "Totems",
@@ -32,24 +31,16 @@ class _AdminLayoutState extends State<AdminLayout> {
   ];
 
   final List<Widget> _pages = [
-    // PlaceholderWidget(title: "Drivers management"),
-    DriversManagementPage(),
-    // PlaceholderWidget(title: "Controllers management"),
-    UserManagementPage(),
-    FineManagementPage(),
-    // PlaceholderWidget(title: "City fines"),
-    TotemLocationPage(),
-    // PlaceholderWidget(title: "Totem locations"),
-    TicketManagementPage(),
-
-    // PlaceholderWidget(title: "City tickets"),
+    PlaceholderWidget(title: "Controllers management"),
+    PlaceholderWidget(title: "City fines"),
+    PlaceholderWidget(title: "Totem locations"),
+    PlaceholderWidget(title: "City tickets"),
     PlaceholderWidget(title: "Plate check (as controller)"),
     ParkingZoneStatusPage(),
     // PlaceholderWidget(title: "Zone pricing and status"),
   ];
 
   final List<Icon> _icons = [
-    Icon(Icons.person),
     Icon(Icons.shield),
     Icon(Icons.receipt_long),
     Icon(Icons.place),
