@@ -2,14 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'admin/layout.dart';
+import 'admin/admin_layout.dart';
 import 'config.dart';
-import 'controller/layout.dart';
-import 'driver/layout.dart';
+import 'controller/controller_layout.dart';
+import 'driver/driver_layout.dart';
 import 'driver/zone_selection.dart';
-import 'singleton/dio_client.dart';
+import 'API/client.dart';
 import 'installer/install_totem.dart';
-import 'totem_qr.dart';
+import 'installer/totem_qr.dart';
 import 'dart:io';
 
 class LoginPage extends StatefulWidget {

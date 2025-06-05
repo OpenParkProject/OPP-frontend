@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:openpark/admin/utils/url_dao.dart';
-
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});
@@ -36,13 +34,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final response = await dio.get(userUrl);
+        final response = await dio.get('/users');
         setState(() {
           _users = response.data;
           _singleUser = null;
         });
       } else if (_isValidId(id)) {
-        final response = await dio.get('$userUrl/$id');
+        final response = await dio.get('/users/$id');
         setState(() {
           _singleUser = response.data;
           _users = [];
@@ -66,14 +64,14 @@ class _UserManagementPageState extends State<UserManagementPage> {
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final response = await dio.get(userUrl);
+        final response = await dio.get('/users');
         final users = response.data as List;
         for (var user in users) {
-          await dio.delete('$userUrl/${user['id']}');
+          await dio.delete('/users/${user['id']}');
         }
         _showSnackbar('All users deleted');
       } else if (_isValidId(id)) {
-        await dio.delete('$userUrl/$id');
+        await dio.delete('/users/$id');
         _showSnackbar('Delete successful');
       } else {
         _showSnackbar('Please enter a valid numeric ID');
@@ -135,7 +133,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   final dio = DioClient().dio;
 
                   await dio.patch(
-                    '$userUrl/$id',
+                    '/users/$id',
                     data: updatedData,
                     options: Options(
                       headers: {'Content-Type': 'application/json'},

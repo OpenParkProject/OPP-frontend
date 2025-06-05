@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 import '../widgets/clock_widget.dart';
 import 'zone_selection.dart';
 import 'payment.dart';

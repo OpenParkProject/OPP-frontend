@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 
 class IssueFinePage extends StatefulWidget {
   const IssueFinePage({super.key});

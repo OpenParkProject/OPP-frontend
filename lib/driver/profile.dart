@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 import '../login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 
 class DriversManagementPage extends StatefulWidget {
   final void Function(String)? onPlateSelected;

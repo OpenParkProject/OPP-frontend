@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
-import '../../singleton/dio_client.dart';
+import '../API/client.dart';
 
 class TicketCheckWidget extends StatefulWidget {
   final String plate;

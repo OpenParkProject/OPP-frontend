@@ -4,9 +4,9 @@ import 'package:openpark/config.dart';
 import 'package:openpark/installer/install_totem.dart';
 
 import '../login.dart';
-import '../driver/layout.dart';
-import '../controller/layout.dart';
-import '../admin/layout.dart';
+import '../driver/driver_layout.dart';
+import '../controller/controller_layout.dart';
+import '../admin/admin_layout.dart';
 import '../main.dart';
 
 class DebugRoleSelector extends StatelessWidget {
@@ -23,8 +23,7 @@ class DebugRoleSelector extends StatelessWidget {
         destination = const ControllerLayout(username: 'debug_controller');
         break;
       case 'admin':
-        // destination = AdminLayout(username: 'debug_admin');
-        destination = ControllerLayout(username: 'debug_admin');
+        destination = AdminLayout(username: 'debug_admin');
         break;
       case 'installer':
         destination = InstallTotemPage(username: 'debug_installer');

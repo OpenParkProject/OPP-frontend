@@ -1,8 +1,7 @@
 // ticket_management_page.dart
 import 'package:flutter/material.dart';
-import 'package:openpark/admin/utils/url_dao.dart';
 
-import '../singleton/dio_client.dart';
+import '../API/client.dart';
 
 class TicketManagementPage extends StatefulWidget {
   const TicketManagementPage({super.key});
@@ -33,13 +32,13 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final res = await dio.get(ticketUrl);
+        final res = await dio.get('/tickets');
         setState(() {
           _tickets = res.data;
           _singleTicket = null;
         });
       } else if (_isValidId(id)) {
-        final res = await dio.get('$ticketUrl/$id');
+        final res = await dio.get('tickets/$id');
         setState(() {
           _singleTicket = res.data;
           _tickets = [];
@@ -63,7 +62,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
     setState(() => _isLoading = true);
     try {
       await DioClient().setAuthToken();
-      final res = await DioClient().dio.delete('$ticketUrl/$id');
+      final res = await DioClient().dio.delete('tickets/$id');
       if (res.statusCode == 200) {
         _showSnackbar('Ticket deleted');
         _getTickets();
@@ -121,7 +120,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
                   };
 
                   final res = await DioClient().dio.patch(
-                    '$ticketUrl/$id',
+                    'tickets/$id',
                     data: updatedData,
                   );
                   if (res.statusCode == 200) {

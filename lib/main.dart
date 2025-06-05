@@ -1,20 +1,14 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:timezone/data/latest.dart' as tz;
-
 import 'login.dart';
-import 'db/db_zones.dart';
-import 'controller/issue_fine.dart';
-import 'debug/debug_role_selector.dart';
-import 'singleton/dio_client.dart';
-import 'driver/layout.dart';
+import 'debug/debug.dart';
+import 'API/client.dart';
 import 'config.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -119,7 +113,6 @@ Future<void> checkExpiringTickets() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   tz.initializeTimeZones();
-  await ZoneDB.loadZones();
 
   if (UniversalPlatform.isWeb) {
     // Web-specific code
@@ -179,8 +172,7 @@ class ParkingApp extends StatelessWidget {
           ),
         ),
       ),
-      // Add your routes here
-      home: LoginPage(), // Assuming LoginPage is the starting point
+      home: debugMode ? const DebugRoleSelector() : LoginPage(),
     );
   }
 }

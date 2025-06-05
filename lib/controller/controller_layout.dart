@@ -5,7 +5,7 @@ import 'package:openpark/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_platform/universal_platform.dart';
 
-import '../admin/layout.dart';
+import '../admin/admin_layout.dart';
 import '../login.dart';
 import 'chalked_cars.dart';
 import 'fines_issued.dart';
