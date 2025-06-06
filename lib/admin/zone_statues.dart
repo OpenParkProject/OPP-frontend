@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:openpark/API/client.dart';
+import 'package:openpark/admin/add_zone.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 class ParkingZone {
@@ -39,22 +41,36 @@ class ParkingZone {
   void _extractCoordinates() {
     try {
       final geometryData = jsonDecode(geometry);
+      List<List<double>> coords;
+      
       if (geometryData['type'] == 'Polygon') {
-        final coords = geometryData['coordinates'][0];
-        
-        // Calculate center point of polygon
-        double sumLat = 0;
-        double sumLng = 0;
-        int numPoints = coords.length - 1; // Last point is same as first in closed polygon
-        
-        for (int i = 0; i < numPoints; i++) {
-          sumLng += coords[i][0];
-          sumLat += coords[i][1];
-        }
-        
-        latitude = sumLat / numPoints;
-        longitude = sumLng / numPoints;
+        coords = List<List<double>>.from(geometryData['coordinates'][0].map(
+          (coord) => List<double>.from(coord)
+        ));
+      } else if (geometryData['type'] == 'MultiPolygon') {
+        // For MultiPolygon, take the first polygon's coordinates
+        coords = List<List<double>>.from(geometryData['coordinates'][0][0].map(
+          (coord) => List<double>.from(coord)
+        ));
+      } else {
+        debugPrint('Unsupported geometry type: ${geometryData['type']}');
+        latitude = 0;
+        longitude = 0;
+        return;
       }
+      
+      // Calculate center point of polygon
+      double sumLat = 0;
+      double sumLng = 0;
+      int numPoints = coords.length - 1; // Last point is same as first in closed polygon
+      
+      for (int i = 0; i < numPoints; i++) {
+        sumLng += coords[i][0];
+        sumLat += coords[i][1];
+      }
+      
+      latitude = sumLat / numPoints;
+      longitude = sumLng / numPoints;
     } catch (e) {
       debugPrint('Error parsing geometry: $e');
       // Default coordinates if parsing fails
@@ -71,7 +87,9 @@ class ParkingZone {
       name: json['name'] as String,
       available: json['available'] as bool,
       geometry: json['geometry'] as String,
-      metadata: json['metadata'] as Map<String, dynamic>,
+      metadata: json['metadata'] is String 
+          ? jsonDecode(json['metadata']) 
+          : (json['metadata'] as Map<String, dynamic>),
       priceOffset: (json['price_offset'] as num).toDouble(),
       priceLin: (json['price_lin'] as num).toDouble(),
       priceExp: (json['price_exp'] as num).toDouble(),
@@ -97,7 +115,13 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    _loadData();
+  }
+
+  // Move async operations to a separate method
+  Future<void> _loadData() async {
+    await _determinePosition();
+    await _fetchZonesAndCalculateDistances();
   }
 
   Future<void> _determinePosition() async {
@@ -127,7 +151,6 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
         userLat = position.latitude;
         userLong = position.longitude;
       });
-      _fetchZonesAndCalculateDistances();
     }
   }
 
@@ -147,7 +170,6 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
         userLong = 0.0; // Default fallback
       });
     }
-    await _fetchZonesAndCalculateDistances();
   }
 
   Future<void> _fetchZonesAndCalculateDistances() async {
@@ -162,11 +184,13 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     });
 
     try {
+      await DioClient().setAuthToken();
+      final dio = DioClient().dio;
       // Fetch zones from API
-      final response = await http.get(Uri.parse('http://openpark.com/api/v1/zones'));
+      final response = await dio.get('/zones');
       
       if (response.statusCode == 200) {
-        final List<dynamic> zonesData = jsonDecode(response.body);
+        final List<dynamic> zonesData = response.data;
         
         List<ParkingZone> zones = zonesData.map((zoneData) {
           return ParkingZone.fromJson(zoneData as Map<String, dynamic>);
@@ -204,6 +228,18 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
         errorMessage = 'Error fetching zones: $e';
       });
       debugPrint('Error fetching zones: $e');
+    }
+  }
+
+  Future<void> _addZone() async {
+    // Navigate to the zone creation page and wait for result
+    final result = await Navigator.push(context,
+      MaterialPageRoute(builder: (context) => AddZonePage()),
+    );
+    
+    // Refresh the zones list when returning
+    if (result == true) {
+      _fetchZonesAndCalculateDistances();
     }
   }
 
@@ -287,6 +323,15 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                               },
                             ),
                           ),
+                          SizedBox(height: 10),
+                          TextButton(onPressed: _addZone,
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                textStyle: TextStyle(fontSize: 16),
+                              ),
+                              child: Text("Add zone"),
+                            ),
                         ],
                       ),
                     ),
