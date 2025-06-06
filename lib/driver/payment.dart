@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:openpark/config.dart';
 import '../API/client.dart';
 import 'package:dio/dio.dart';
 
@@ -19,12 +20,15 @@ class ParkingPaymentPage extends StatelessWidget {
     super.key,
   });
 
-  Future<void> _payTicket(BuildContext context) async {
+  Future<void> _payTicket(BuildContext context, String paymentMethod) async {
     try {
       await DioClient().setAuthToken();
+      
       await DioClient().dio.post('/tickets/$ticketId/pay');
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("✅ Ticket paid successfully")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
+      );
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       String msg = "❌ Payment failed.";
@@ -73,13 +77,42 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Total: €${totalCost.toStringAsFixed(2)}",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                 SizedBox(height: 30),
+                
+                // Payment options section
+                Text("Choose payment method:", 
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                SizedBox(height: 15),
+                
+                // Totem card payment button
+                if (isTotem)
                 ElevatedButton.icon(
-                  onPressed: () => _payTicket(context),
-                  icon: Icon(Icons.check_circle),
-                  label: Text("Confirm and Pay by Card"),
-                  style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 48)),
+                  onPressed: () => _payTicket(context, "card"),
+                  icon: Icon(Icons.credit_card),
+                  label: Text("Pay with Card"),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 48),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
                 SizedBox(height: 12),
+                
+                if (!isTotem) ...[
+                  // PayPal payment button
+                  ElevatedButton.icon(
+                    onPressed: () => _payTicket(context, "PayPal"),
+                    icon: Icon(Icons.payment),
+                    label: Text("Pay with PayPal"),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 48),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                ],
+                
+                // Pay later option
                 OutlinedButton.icon(
                   onPressed: () => _skipPayment(context),
                   icon: Icon(Icons.access_time),

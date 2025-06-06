@@ -30,7 +30,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
         hasScanned = true;
         try {
           final parsed = jsonDecode(scanData.code ?? '');
-          if (parsed is Map && parsed.containsKey('mac') && parsed.containsKey('timestamp')) {
+          if (parsed is Map && parsed.containsKey('id') && parsed.containsKey('timestamp')) {
             Navigator.pop(context, parsed);
           } else {
             _showInvalidFormat();

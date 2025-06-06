@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DioClient {
@@ -16,6 +17,8 @@ class DioClient {
     final token = prefs.getString('access_token');
     if (token != null && token.isNotEmpty) {
       dio.options.headers['Authorization'] = 'Bearer $token';
+    } else {
+      debugPrint('No access token found in SharedPreferences');
     }
   }
 
