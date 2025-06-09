@@ -31,11 +31,11 @@ class _AdminLayoutState extends State<AdminLayout> {
   ];
 
   final List<Widget> _pages = [
-    DriversManagementPage(),
+    UserManagementPage(),
     FineManagementPage(),
     TotemLocationPage(),
     TicketManagementPage(),
-    UserManagementPage(),
+    DriversManagementPage(),
     ParkingZoneStatusPage(),
   ];
 
