@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:openpark/debug/debug.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin/admin_layout.dart';
@@ -9,7 +10,7 @@ import 'driver/driver_layout.dart';
 import 'driver/zone_selection.dart';
 import 'API/client.dart';
 import 'installer/install_totem.dart';
-import 'installer/totem_qr.dart';
+import 'installer/totem_setup.dart';
 import 'dart:io';
 
 class LoginPage extends StatefulWidget {
@@ -61,16 +62,11 @@ class _LoginPageState extends State<LoginPage> {
 
         String role = user['role'] ?? '';
         globalRole = role; // Store globally for later use
-        if (username == "c" && password == "c") role = "controller";
-        if (username == "admin" && password == "admin") role = "admin";
-        if (username == "installer" && password == "installer") role = "installer";
 
         if (role == "admin") {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
         } else if (role == "controller") {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])));
-        } else if (role == "installer") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => InstallTotemPage(username: user['username'])));
         } else {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: user['username'])));
         }
@@ -153,6 +149,28 @@ class _LoginPageState extends State<LoginPage> {
             height: double.infinity,
             width: double.infinity,
           ),
+          
+          // Debug Mode Button - positioned in top left corner
+          if (debugMode) // Only show in debug mode
+            Positioned(
+              top: 40,
+              left: 16,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => DebugRoleSelector())
+                  );
+                },
+                icon: Icon(Icons.bug_report),
+                label: Text("Debug"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade800,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ),
+          
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.only(top: 170),
@@ -256,7 +274,7 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: () {},
                           onLongPress: () {
                             if (Platform.isWindows || Platform.isLinux) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemQRPage()));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemPage()));
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Totem setup is only available on desktop devices.")),

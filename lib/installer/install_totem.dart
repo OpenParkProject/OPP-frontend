@@ -6,15 +6,14 @@ import 'dart:io';
 bool get isQRScannerEnabled => Platform.isAndroid || Platform.isIOS;
 
 class InstallTotemPage extends StatefulWidget {
-  final String username;
-  const InstallTotemPage({required this.username});
+  const InstallTotemPage({super.key});
 
   @override
   State<InstallTotemPage> createState() => _InstallTotemPageState();
 }
 
 class _InstallTotemPageState extends State<InstallTotemPage> {
-  String? scannedMac;
+  String? scannedId;
   DateTime? scannedTimestamp;
   Position? currentPosition;
 
@@ -51,7 +50,7 @@ class _InstallTotemPageState extends State<InstallTotemPage> {
     );
 
     if (result != null && result is Map) {
-      scannedMac = result['mac'];
+      scannedId = result['mac'];
       scannedTimestamp = DateTime.fromMillisecondsSinceEpoch(result['timestamp'] * 1000);
       setState(() {});
       _getCurrentPosition();
@@ -60,7 +59,7 @@ class _InstallTotemPageState extends State<InstallTotemPage> {
 
 
   void _submitForm() {
-    if (scannedMac == null || selectedCity == null || selectedZone == null || currentPosition == null) return;
+    if (scannedId == null || selectedCity == null || selectedZone == null || currentPosition == null) return;
 
     final now = DateTime.now();
     final duration = now.difference(scannedTimestamp!);
@@ -71,7 +70,7 @@ class _InstallTotemPageState extends State<InstallTotemPage> {
 
     // TODO: send data to backend
     print("Submitting:");
-    print("MAC: $scannedMac");
+    print("ID: $scannedId");
     print("City: $selectedCity, Zone: $selectedZone");
     print("Label: ${locationLabelController.text}");
     print("LatLng: ${currentPosition!.latitude}, ${currentPosition!.longitude}");
@@ -89,8 +88,8 @@ class _InstallTotemPageState extends State<InstallTotemPage> {
               onPressed: _scanQrAndExtractData,
               child: Text("Scan Totem QR Code"),
             ),
-            if (scannedMac != null) ...[
-              Text("MAC: $scannedMac"),
+            if (scannedId != null) ...[
+              Text("id: $scannedId"),
               Text("Timestamp: ${scannedTimestamp.toString()}"),
               SizedBox(height: 10),
               TextField(

@@ -172,7 +172,7 @@ class ParkingApp extends StatelessWidget {
           ),
         ),
       ),
-      home: debugMode ? const DebugRoleSelector() : LoginPage(),
+      home: LoginPage(),
     );
   }
 }
