@@ -98,12 +98,12 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
   Future<void> _deleteCar(String plate) async {
     try {
       await DioClient().setAuthToken();
-      await DioClient().dio.delete("/cars/$plate");
+      await DioClient().dio.delete("/cars");
 
-      setState(() => _feedbackMessage = "✅ Vehicle $plate deleted.");
+      setState(() => _feedbackMessage = "✅ Vehicles deleted.");
       await _fetchPlates();
     } catch (e) {
-      setState(() => _feedbackMessage = "❌ Failed to delete $plate");
+      setState(() => _feedbackMessage = "❌ Failed to delete");
     }
   }
 
