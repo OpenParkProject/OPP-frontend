@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../API/client.dart';
 import 'payment.dart';
 import 'zone_selection.dart';
+import 'dart:math';
 
 class SelectDurationPage extends StatefulWidget {
   final String plate;
@@ -26,8 +27,9 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
   double _calculatePrice(int minutes) {
     final z = widget.selectedZone;
     final t = minutes / 60.0;
-    return z.priceOffset + z.priceLin * t + z.priceExp * t * t;
+    return z.priceOffset + pow(z.priceLin * t, z.priceExp);
   }
+
 
 
   void _changeDuration(int delta) {
@@ -85,11 +87,10 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
     try {
       await DioClient().setAuthToken();
-      final response = await DioClient().dio.post("/cars/${widget.plate}/tickets", data: {
+      final response = await DioClient().dio.post("/zones/${widget.selectedZone.id}/tickets", data: {
         "plate": widget.plate,
         "start_date": startDate.toUtc().toIso8601String(),
         "duration": _durationMinutes,
-        "zone_id": widget.selectedZone.id,
       });
 
       final ticketId = response.data['id'];
@@ -116,6 +117,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
         ),
       );
     } catch (e) {
+      debugPrint("${e}");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Ticket creation failed.")));
     } finally {
       setState(() => _creating = false);
@@ -235,7 +237,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
                                   title: Text("How the cost is calculated"),
                                   content: Text(
                                     "The parking cost is calculated using a dynamic pricing formula:\n\n"
-                                    "Cost = offset + linear × t + exponential × t²\n\n"
+                                    "Cost = offset + (linear × t) ^ exponential\n\n"
                                     "Where:\n"
                                     "- offset = €$offset\n"
                                     "- linear (€/hour) = €$lin\n"

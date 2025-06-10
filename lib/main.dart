@@ -7,9 +7,9 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'login.dart';
-import 'debug/debug.dart';
 import 'API/client.dart';
-import 'config.dart';
+import 'controller/issue_fine.dart';
+
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -176,6 +176,9 @@ class ParkingApp extends StatelessWidget {
         ),
       ),
       home: LoginPage(),
+      routes:{
+        '/issue_fine': (context) => const IssueFinePage(),
+      }
     );
   }
 }

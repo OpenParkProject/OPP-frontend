@@ -173,18 +173,6 @@ class _ControllerLayoutState extends State<ControllerLayout> {
         ],
       ),
       body: _pages[_selectedIndex],
-      floatingActionButton: Tooltip(
-        message:
-            globalRole == 'admin'
-                ? 'Access admin dedicated page'
-                : 'Only admins can access this page',
-        child: FloatingActionButton(
-          backgroundColor:
-              globalRole == 'admin' ? Colors.blue : Colors.grey.shade400,
-          onPressed: globalRole == 'admin' ? _handleAdminAccess : null,
-          child: const Icon(Icons.admin_panel_settings),
-        ),
-      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,

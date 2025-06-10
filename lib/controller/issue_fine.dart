@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class IssueFinePage extends StatefulWidget {
   const IssueFinePage({super.key});
@@ -10,6 +11,8 @@ class IssueFinePage extends StatefulWidget {
 }
 
 class _IssueFinePageState extends State<IssueFinePage> {
+  List<Map<String, dynamic>> assignedZones = [];
+  Map<String, dynamic>? selectedZone;
   final List<double> suggestedAmounts = [10, 20, 50];
   double? selectedAmount;
   final TextEditingController _customAmountController = TextEditingController();
@@ -17,9 +20,38 @@ class _IssueFinePageState extends State<IssueFinePage> {
   String? _errorMessage;
   String? _successMessage;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadZones();
+  }
+
+  Future<void> _loadZones() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList("zone_ids");
+    final names = prefs.getStringList("zone_names");
+
+    if (ids != null && names != null && ids.length == names.length) {
+      setState(() {
+        assignedZones = List.generate(ids.length, (i) {
+          return {
+            'id': int.tryParse(ids[i]),
+            'name': names[i],
+          };
+        });
+        selectedZone = assignedZones.first;
+      });
+    }
+  }
+
   Future<void> _submitFine(String plate) async {
     final customText = _customAmountController.text.trim();
     final double? amount = selectedAmount ?? (customText.isNotEmpty ? double.tryParse(customText) : null);
+
+    if (selectedZone == null) {
+      setState(() => _errorMessage = "Please select a zone.");
+      return;
+    }
 
     if (amount == null || amount <= 0) {
       setState(() => _errorMessage = "Please select or enter a valid amount.");
@@ -39,20 +71,19 @@ class _IssueFinePageState extends State<IssueFinePage> {
 
     try {
       final dio = DioClient().dio;
+      final zid = selectedZone!['id'];
 
-      // Verifica se il backend richiede /fines/{plate} oppure solo /fines con plate nel body
-      final response = await dio.post('/fines/$plate', data: {
+      final response = await dio.post('/zones/$zid/fines', data: {
         "plate": plate,
         "amount": amount,
       });
 
       if (response.statusCode == 201) {
-        final successMsg = "✅ Fine issued for $plate: €${amount.toStringAsFixed(2)}";
+        final successMsg = "✅ Fine issued for $plate in Zone $zid: €${amount.toStringAsFixed(2)}";
         setState(() {
           _successMessage = successMsg;
         });
 
-        // Show snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(successMsg),
@@ -62,10 +93,8 @@ class _IssueFinePageState extends State<IssueFinePage> {
           ),
         );
 
-        // After 2 seconds, go back to controller homepage
         await Future.delayed(const Duration(seconds: 2));
         if (context.mounted) Navigator.pop(context);
-
       } else {
         setState(() {
           _errorMessage = "Unexpected response: ${response.statusCode}";
@@ -101,7 +130,7 @@ class _IssueFinePageState extends State<IssueFinePage> {
     return error.toString();
   }
 
-  @override
+ @override
   Widget build(BuildContext context) {
     final String plate = ModalRoute.of(context)!.settings.arguments as String;
 
@@ -114,6 +143,28 @@ class _IssueFinePageState extends State<IssueFinePage> {
           children: [
             Text("Issuing fine for plate: $plate", style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
+
+            if (assignedZones.isNotEmpty) ...[
+              const Text("Select Zone:"),
+              const SizedBox(height: 6),
+              DropdownButton<Map<String, dynamic>>(
+                isExpanded: true,
+                value: selectedZone,
+                items: assignedZones.map((z) {
+                  return DropdownMenuItem(
+                    value: z,
+                    child: Text("Zone ${z['id']} - ${z['name']}"),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedZone = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+            ],
+
             const Text("Suggested amounts:"),
             const SizedBox(height: 10),
             Center(

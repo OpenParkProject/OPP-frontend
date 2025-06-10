@@ -12,6 +12,7 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
   List<Map<String, dynamic>> controllers = [];
   bool loading = true;
   String? feedback;
+  String? currentAdmin;
 
   @override
   void initState() {
@@ -21,6 +22,7 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
 
   Future<void> _fetchControllers() async {
     setState(() {
+      String? currentAdmin;
       loading = true;
       controllers = [];
       feedback = null;
@@ -32,7 +34,11 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
 
       // 1. Get the logged-in admin
       final currentUserRes = await dio.get("/users/me");
-      final String currentAdmin = currentUserRes.data['username'];
+      final String admin = currentUserRes.data['username'];
+      setState(() {
+        currentAdmin = admin;
+      });
+
 
       // 2. Get all zones
       final zonesRes = await dio.get("/zones");
@@ -149,6 +155,16 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
+            if (currentAdmin != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Controllers created by admin $currentAdmin",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Expanded(
               child: loading
                   ? Center(child: CircularProgressIndicator())

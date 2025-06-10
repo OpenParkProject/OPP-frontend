@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../controller/issue_fine.dart';
 
 class TicketCheckWidget extends StatefulWidget {
   final String plate;
@@ -33,14 +34,14 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
 
   Future<void> _loadAssignedZones() async {
     final prefs = await SharedPreferences.getInstance();
-    final ids = prefs.getStringList("assigned_zone_ids");
+    final ids = prefs.getStringList("zone_ids"); // corretto nome
     if (ids != null) {
       assignedZoneIds = ids.map((e) => int.tryParse(e)).whereType<int>().toList();
     }
   }
-
+  
   Future<void> _fetchTickets() async {
-    final plate = widget.plate;
+    final plate = widget.plate.toLowerCase(); // confronti case-insensitive
     setState(() {
       _loading = true;
       _errorMessage = null;
@@ -52,47 +53,51 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
 
     try {
       final dio = DioClient().dio;
-      final response = await dio.get('/cars/$plate/tickets');
-      final data = response.data;
+      final now = DateTime.now();
 
-      if (data is List) {
-        final now = DateTime.now();
-        for (var ticket in data) {
-          if (!assignedZoneIds.contains(ticket['zone_id'])) continue;
-          try {
-            final start = DateTime.parse(ticket['start_date']).toLocal();
-            final end = DateTime.parse(ticket['end_date']).toLocal();
-            ticket['parsed_start'] = start;
-            ticket['parsed_end'] = end;
-            if (ticket['creation_time'] != null) {
-              try {
-                final created = DateTime.parse(ticket['creation_time']).toLocal();
-                ticket['parsed_creation'] = created;
-              } catch (_) {
-                ticket['parsed_creation'] = null;
+      for (final zid in assignedZoneIds) {
+        final res = await dio.get('/zones/$zid/tickets', queryParameters: {
+          'limit': 100,
+          'valid_only': false,
+        });
+
+        if (res.data is List) {
+          for (final t in res.data) {
+            if ((t['plate'] ?? '').toString().toLowerCase() != plate) continue;
+
+            try {
+              final start = DateTime.parse(t['start_date']).toLocal();
+              final end = DateTime.parse(t['end_date']).toLocal();
+              t['parsed_start'] = start;
+              t['parsed_end'] = end;
+
+              if (t['creation_time'] != null) {
+                try {
+                  t['parsed_creation'] = DateTime.parse(t['creation_time']).toLocal();
+                } catch (_) {
+                  t['parsed_creation'] = null;
+                }
+              } else {
+                t['parsed_creation'] = null;
               }
-            } else {
-              ticket['parsed_creation'] = null;
-            }
 
-            if (now.isAfter(start) && now.isBefore(end)) {
-              activeTickets.add(ticket);
-            } else if (now.isAfter(end) && now.difference(end).inMinutes <= 30) {
-              recentExpiredTickets.add(ticket);
-            }
+              allTickets.add(t);
 
-            allTickets.add(ticket);
-          } catch (_) {}
+              if (now.isAfter(start) && now.isBefore(end)) {
+                activeTickets.add(t);
+              } else if (now.isAfter(end) && now.difference(end).inMinutes <= 30) {
+                recentExpiredTickets.add(t);
+              }
+            } catch (e) {
+              debugPrint("⚠️ Failed to parse ticket: $e");
+            }
+          }
         }
-
-        setState(() {
-          filteredHistory = List.from(allTickets);
-        });
-      } else {
-        setState(() {
-          _errorMessage = "Unexpected server response.";
-        });
       }
+
+      setState(() {
+        filteredHistory = List.from(allTickets);
+      });
     } catch (e) {
       setState(() {
         _errorMessage = "Error: ${_handleError(e)}";

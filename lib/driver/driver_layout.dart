@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'tickets.dart';
 import 'profile.dart';
 import 'my_cars.dart';
+import 'my_fines.dart';
 
 class MainUserHomePage extends StatefulWidget {
   final String username;
@@ -23,6 +24,7 @@ class _MainUserHomePageState extends State<MainUserHomePage> {
     _pages = [
       UserTicketsPage(),
       MyCarsPage(),
+      MyFinesPage(),
       ProfilePage(),
     ];
   }
@@ -41,6 +43,7 @@ class _MainUserHomePageState extends State<MainUserHomePage> {
         destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(Icons.confirmation_num), label: 'My Tickets'),
           NavigationDestination(icon: Icon(Icons.directions_car), label: 'My Cars'),
+          NavigationDestination(icon: Icon(Icons.receipt_long), label: 'My Fines'),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

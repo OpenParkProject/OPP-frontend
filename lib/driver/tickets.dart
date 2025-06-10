@@ -85,7 +85,15 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
     final start = DateTime.tryParse(ticket['start_date'] ?? '')?.toLocal();
     final end = DateTime.tryParse(ticket['end_date'] ?? '')?.toLocal();
     final plate = ticket['plate'] ?? '—';
-    final price = ticket['price']?.toDouble() ?? 0.0;
+    double _parsePrice(dynamic p) {
+      if (p == null) return 0.0;
+      if (p is num) return p.toDouble();
+      if (p is String) return double.tryParse(p) ?? 0.0;
+      return 0.0;
+    }
+
+    final price = _parsePrice(ticket['price']);
+
     final paid = ticket['paid'] == true;
     final id = ticket['id'];
     final now = DateTime.now();
