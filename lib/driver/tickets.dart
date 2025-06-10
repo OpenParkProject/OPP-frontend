@@ -258,49 +258,97 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                   ? Center(child: CircularProgressIndicator())
                   : errorMsg != null
                       ? Center(child: Text(errorMsg!))
-                      : ListView(
-                        children: [
-                          if (activeTickets.isNotEmpty) ...[
-                            Text("Currently Active", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            ...activeTickets.map((t) => _buildTicketCard(t)),
-                            Divider(height: 32, thickness: 2),
-                          ],
-                          if (scheduledPaid.isNotEmpty) ...[
-                            Text("Scheduled – Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            ...scheduledPaid.map((t) => _buildTicketCard(t)),
-                            Divider(height: 32, thickness: 2),
-                          ],
-                          if (scheduledUnpaid.isNotEmpty) ...[
-                            Text("Scheduled – Not Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                            SizedBox(height: 8),
-                            ...scheduledUnpaid.map((t) => _buildTicketCard(t)),
-                            Divider(height: 32, thickness: 2),
-                          ],
-                          if (expiredTickets.isNotEmpty) ...[
-                            GestureDetector(
-                              onTap: () => setState(() => showExpired = !showExpired),
-                              child: Row(
-                                children: [
-                                  Icon(showExpired ? Icons.expand_less : Icons.expand_more),
-                                  SizedBox(width: 8),
-                                  Text("Expired Tickets", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            AnimatedCrossFade(
-                              crossFadeState: showExpired ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-                              duration: Duration(milliseconds: 300),
-                              firstChild: Column(
-                                children: expiredTickets.map((t) => _buildTicketCard(t, isExpired: true)).toList(),
-                              ),
-                              secondChild: SizedBox.shrink(),
-                            ),
-                          ],
-                        ],
-                      )
+        : (activeTickets.isEmpty &&
+          scheduledPaid.isEmpty &&
+          scheduledUnpaid.isEmpty &&
+          expiredTickets.isEmpty)
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.hourglass_empty, size: 80, color: Colors.grey.shade400),
+                    SizedBox(height: 16),
+                    Text(
+                      "You don't have any tickets yet.",
+                      style: TextStyle(fontSize: 18, color: Colors.grey.shade700),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Tap the ➕ button below to get started!",
+                      style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+            : ListView(
+              children: [
+                if (activeTickets.isNotEmpty) ...[
+                  Text("Currently Active", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  ...activeTickets.map((t) => _buildTicketCard(t)),
+                  Divider(height: 32, thickness: 2),
+                ],
+                if (scheduledPaid.isNotEmpty) ...[
+                  Text("Scheduled – Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  ...scheduledPaid.map((t) => _buildTicketCard(t)),
+                  Divider(height: 32, thickness: 2),
+                ],
+                if (scheduledUnpaid.isNotEmpty) ...[
+                  Text("Scheduled – Not Paid", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  ...scheduledUnpaid.map((t) => _buildTicketCard(t)),
+                  Divider(height: 32, thickness: 2),
+                ],
+                if (activeTickets.isEmpty &&
+                    scheduledPaid.isEmpty &&
+                    scheduledUnpaid.isEmpty &&
+                    expiredTickets.isNotEmpty) ...[
+                  SizedBox(height: 32),
+                  Column(
+                    children: [
+                      Icon(Icons.event_busy, size: 80, color: Colors.grey.shade400),
+                      SizedBox(height: 16),
+                      Text(
+                        "You don't have any active tickets.",
+                        style: TextStyle(fontSize: 18, color: Colors.grey.shade700),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Tap the ➕ button below to create a new one.",
+                        style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24),
+                ],
+                if (expiredTickets.isNotEmpty) ...[
+                  GestureDetector(
+                    onTap: () => setState(() => showExpired = !showExpired),
+                    child: Row(
+                      children: [
+                        Icon(showExpired ? Icons.expand_less : Icons.expand_more),
+                        SizedBox(width: 8),
+                        Text("Expired Tickets", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  AnimatedCrossFade(
+                    crossFadeState: showExpired ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+                    duration: Duration(milliseconds: 300),
+                    firstChild: Column(
+                      children: expiredTickets.map((t) => _buildTicketCard(t, isExpired: true)).toList(),
+                    ),
+                    secondChild: SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            )
             ),
           ),
         ],
