@@ -168,7 +168,9 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
           children: [
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(labelText: 'Enter Ticket ID'),
+              decoration: const InputDecoration(
+                labelText: 'Please enter a valid numeric ID',
+              ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),

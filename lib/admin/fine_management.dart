@@ -166,7 +166,9 @@ class _FineManagementPageState extends State<FineManagementPage> {
           children: [
             TextField(
               controller: _idController,
-              decoration: const InputDecoration(labelText: 'Enter Fine ID'),
+              decoration: const InputDecoration(
+                labelText: 'Please enter a valid numeric ID',
+              ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 12),
