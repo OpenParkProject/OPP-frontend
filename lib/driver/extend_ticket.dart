@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'payment.dart';
+import '../API/client.dart';
 
 class ExtendTicketPage extends StatefulWidget {
   final int ticketId;
@@ -8,6 +9,7 @@ class ExtendTicketPage extends StatefulWidget {
   final DateTime oldStart;
   final DateTime oldEnd;
   final double oldPrice;
+  final int zoneId;
 
   const ExtendTicketPage({
     required this.ticketId,
@@ -15,6 +17,7 @@ class ExtendTicketPage extends StatefulWidget {
     required this.oldStart,
     required this.oldEnd,
     required this.oldPrice,
+    required this.zoneId,
     super.key,
   });
 
@@ -89,20 +92,42 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
               icon: Icon(Icons.arrow_forward),
               label: Text("Proceed to Payment"),
               style: ElevatedButton.styleFrom(minimumSize: Size(double.infinity, 48)),
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ParkingPaymentPage(
-                      ticketId: widget.ticketId,
-                      plate: widget.plate,
-                      startDate: widget.oldStart,
-                      durationMinutes: newTotalDuration,
-                      totalCost: widget.oldPrice + additionalCost,
+              onPressed: () async {
+                final newStart = widget.oldEnd.toUtc();
+                final newDuration = extraMinutes;
+                final cost = newDuration * pricePerMinute;
+
+                try {
+                  await DioClient().setAuthToken();
+                  final response = await DioClient().dio.post(
+                    "/zones/${widget.zoneId}/tickets",
+                    data: {
+                      "plate": widget.plate,
+                      "start_date": newStart.toIso8601String(),
+                      "duration": newDuration,
+                    },
+                  );
+
+                  final newTicketId = response.data['id'];
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ParkingPaymentPage(
+                        ticketId: newTicketId,
+                        plate: widget.plate,
+                        startDate: widget.oldEnd,
+                        durationMinutes: newDuration,
+                        totalCost: cost,
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("❌ Failed to create extension ticket")),
+                  );
+                }
+              }
             ),
           ],
         ),

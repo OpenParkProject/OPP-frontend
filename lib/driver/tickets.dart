@@ -18,6 +18,59 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
   List<Map<String, dynamic>> scheduledPaid = [];
   List<Map<String, dynamic>> scheduledUnpaid = [];
   List<Map<String, dynamic>> expiredTickets = [];
+  List<Map<String, dynamic>> mergeTickets(List<Map<String, dynamic>> tickets) {
+    tickets.sort((a, b) {
+      final sa = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(2100);
+      final sb = DateTime.tryParse(b['start_date'] ?? '') ?? DateTime(2100);
+      return sa.compareTo(sb);
+    });
+
+    List<List<Map<String, dynamic>>> groups = [];
+    List<Map<String, dynamic>> currentGroup = [];
+
+    for (var ticket in tickets) {
+      final start = DateTime.tryParse(ticket['start_date'] ?? '');
+      final end = DateTime.tryParse(ticket['end_date'] ?? '');
+      if (start == null || end == null) continue;
+
+      if (currentGroup.isEmpty) {
+        currentGroup.add(ticket);
+      } else {
+        final last = currentGroup.last;
+        final lastEnd = DateTime.tryParse(last['end_date'] ?? '');
+        if (ticket['plate'] == last['plate'] &&
+            ticket['zone_id'] == last['zone_id'] &&
+            lastEnd != null &&
+            start == lastEnd) {
+          currentGroup.add(ticket);
+        } else {
+          groups.add(List.from(currentGroup));
+          currentGroup = [ticket];
+        }
+      }
+    }
+    if (currentGroup.isNotEmpty) groups.add(currentGroup);
+
+    return groups.map((g) {
+      if (g.length == 1) return g.first;
+      final price = g.fold<double>(0, (sum, t) {
+        final p = t['price'];
+        if (p is num) return sum + p.toDouble();
+        if (p is String) return sum + (double.tryParse(p) ?? 0.0);
+        return sum;
+      });
+
+      return {
+        ...g.first,
+        'start_date': g.first['start_date'],
+        'end_date': g.last['end_date'],
+        'price': price,
+        'extended': true,
+        'merged_ids': g.map((t) => t['id']).toList(),
+      };
+    }).toList();
+  }
+
   bool loading = true;
   String? errorMsg;
   bool showExpired = false;
@@ -35,7 +88,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
       final response = await DioClient().dio.get('/users/me/tickets');
       final now = DateTime.now();
 
-      activeTickets.clear();
+      List<Map<String, dynamic>> originalActive = [];
       scheduledPaid.clear();
       scheduledUnpaid.clear();
       expiredTickets.clear();
@@ -52,7 +105,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
         if (end.isBefore(now)) {
           expiredTickets.add(t);
         } else if (paid && now.isAfter(start.subtract(Duration(minutes: 1))) && now.isBefore(end.add(Duration(minutes: 1)))) {
-          activeTickets.add(t);
+          originalActive.add(t);
         } else if (paid) {
           scheduledPaid.add(t);
         } else {
@@ -72,6 +125,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
       scheduledPaid.sort((a, b) => compareDates(a['start_date'], b['start_date']));
       scheduledUnpaid.sort((a, b) => compareDates(a['start_date'], b['start_date']));
 
+      activeTickets = mergeTickets(originalActive);
       setState(() => loading = false);
     } catch (e) {
       setState(() {
@@ -95,6 +149,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
     final price = _parsePrice(ticket['price']);
 
     final paid = ticket['paid'] == true;
+    final isExtended = ticket['extended'] == true;
     final id = ticket['id'];
     final now = DateTime.now();
     final isActive = paid && start != null && end != null && now.isAfter(start) && now.isBefore(end);
@@ -119,6 +174,17 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                 Text("€${price.toStringAsFixed(2)}", style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
+            if (isExtended)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    Icon(Icons.link, size: 16, color: Colors.blueAccent),
+                    SizedBox(width: 6),
+                    Text("Extended ticket", style: TextStyle(color: Colors.blueAccent)),
+                  ],
+                ),
+              ),
             SizedBox(height: 12),
             if (start != null && end != null) ...[
               Row(children: [Icon(Icons.login, size: 16), SizedBox(width: 6), Text("Start: ${dateFormat.format(start)}")]),
@@ -208,6 +274,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                                 oldStart: start,
                                 oldEnd: end,
                                 oldPrice: price,
+                                zoneId: ticket['zone_id'],
                               ),
                             ),
                           );
