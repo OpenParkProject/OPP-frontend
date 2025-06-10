@@ -45,7 +45,7 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
       });
     } catch (e) {
       String msg = "❌ Failed to load vehicle list.";
-      if (e is DioError && e.response?.data is Map) {
+      if (e is DioException && e.response?.data is Map) {
         final data = e.response?.data;
         msg = data?['error']?.toString() ?? data?['detail']?.toString() ?? msg;
       }
