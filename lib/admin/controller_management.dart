@@ -1,254 +1,191 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-
+import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'add_edit_controller_dialog.dart';
 
 class ControllerManagementPage extends StatefulWidget {
   const ControllerManagementPage({super.key});
-
   @override
-  State<ControllerManagementPage> createState() =>
-      _ControllerManagementPageState();
+  State<ControllerManagementPage> createState() => _ControllerManagementPageState();
 }
 
-// 省略 import 和 class 定义部分...
-
 class _ControllerManagementPageState extends State<ControllerManagementPage> {
-  final TextEditingController _idController = TextEditingController();
-  List<dynamic> _users = [];
-  Map<String, dynamic>? _singleUser;
-  bool _isLoading = false;
+  List<Map<String, dynamic>> controllers = [];
+  bool loading = true;
+  String? feedback;
 
-  void _showSnackbar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  @override
+  void initState() {
+    super.initState();
+    _fetchControllers();
   }
 
-  bool _isValidId(String input) {
-    return int.tryParse(input) != null;
-  }
-
-  Future<void> _getUsers() async {
-    setState(() => _isLoading = true);
-    final id = _idController.text.trim();
+  Future<void> _fetchControllers() async {
+    setState(() {
+      loading = true;
+      controllers = [];
+      feedback = null;
+    });
 
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      if (id.isEmpty) {
-        final response = await dio.get('/users');
-        setState(() {
-          _users =
-              (response.data as List)
-                  .where((user) => user['role'] == 'controller')
-                  .toList();
-          _singleUser = null;
-        });
-      } else if (_isValidId(id)) {
-        final response = await dio.get('/users/$id');
-        if (response.data['role'] == 'controller') {
-          setState(() {
-            _singleUser = response.data;
-            _users = [];
-          });
-        } else {
-          setState(() {
-            _singleUser = null;
-            _users = [];
-          });
-          _showSnackbar('User is not a controller');
-        }
-      } else {
-        _showSnackbar('Please enter a valid numeric ID');
-      }
-    } catch (e) {
-      _showSnackbar('Error fetching user(s)');
-    }
+      // 1. Get the logged-in admin
+      final currentUserRes = await dio.get("/users/me");
+      final String currentAdmin = currentUserRes.data['username'];
 
-    setState(() => _isLoading = false);
-  }
+      // 2. Get all zones
+      final zonesRes = await dio.get("/zones");
+      final allZones = List<Map<String, dynamic>>.from(zonesRes.data);
 
-  Future<void> _deleteUser() async {
-    setState(() => _isLoading = true);
-    final id = _idController.text.trim();
+      Map<String, List<Map<String, dynamic>>> groupedControllers = {};
 
-    try {
-      await DioClient().setAuthToken();
-      final dio = DioClient().dio;
+      // 3. For each zone, get the assigned users
+      for (final zone in allZones) {
+        final zid = zone['id'];
+        final zoneUsersRes = await dio.get("/zones/$zid/users");
+        final zoneUsers = List<Map<String, dynamic>>.from(zoneUsersRes.data);
+        final zoneDetailsRes = await dio.get("/zones/$zid");
+        final zoneName = zoneDetailsRes.data['name'];
 
-      if (id.isEmpty) {
-        final response = await dio.get('/users');
-        final users = response.data as List;
-        for (var user in users) {
-          if (user['role'] == 'controller') {
-            await dio.delete('/users/${user['id']}');
+        // 4. Filter controllers assigned by the current admin
+        for (final user in zoneUsers) {
+          if (user['role'] == 'controller' && (user['assigned_by'] ?? '') == currentAdmin) {
+            // Group by username
+            if (!groupedControllers.containsKey(user['username'])) {
+              groupedControllers[user['username']] = [];
+            }
+            groupedControllers[user['username']]!.add({
+              'zone_id': zid,
+              'user_id': user['id'],
+              'zone_name': zoneName,
+
+              ...user,
+            });
           }
         }
-        _showSnackbar('All controller users deleted');
-      } else if (_isValidId(id)) {
-        final response = await dio.get('/users/$id');
-        if (response.data['role'] == 'controller') {
-          await dio.delete('/users/$id');
-          _showSnackbar('Delete successful');
-        } else {
-          _showSnackbar('Cannot delete non-controller user');
-        }
-      } else {
-        _showSnackbar('Please enter a valid numeric ID');
       }
+
+      // 5. Flatten the grouped data into a list
+      List<Map<String, dynamic>> allAssignedControllers = [];
+      groupedControllers.forEach((username, userZones) {
+        allAssignedControllers.add({
+          'username': username,
+          'id': userZones.first['user_id'],
+          'zones': userZones,
+           'password': userZones.first['password'] ?? '********',
+        });
+      });
+
+      setState(() {
+        controllers = allAssignedControllers;
+        loading = false;
+      });
     } catch (e) {
-      _showSnackbar('Delete failed');
+      setState(() {
+        feedback = "❌ Failed to load controllers.";
+        loading = false;
+      });
     }
-
-    setState(() => _isLoading = false);
   }
-
-  Future<void> _updateUserDialog() async {
-    final id = _idController.text.trim();
-    if (!_isValidId(id)) {
-      _showSnackbar('Please enter a valid numeric ID');
-      return;
-    }
-
+  
+  Future<void> _deleteController(int userId) async {
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
-      final response = await dio.get('/users/$id');
 
-      if (response.data['role'] != 'controller') {
-        _showSnackbar('Only controller users can be modified');
-        return;
-      }
+      await dio.delete("/users/$userId");
 
-      Map<String, TextEditingController> controllers = {
-        'name': TextEditingController(),
-        'surname': TextEditingController(),
-        'username': TextEditingController(),
-        'email': TextEditingController(),
-      };
-
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Modify user'),
-            content: SingleChildScrollView(
-              child: Column(
-                children:
-                    controllers.entries
-                        .map(
-                          (entry) => TextField(
-                            controller: entry.value,
-                            decoration: InputDecoration(labelText: entry.key),
-                          ),
-                        )
-                        .toList(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final updatedData = {
-                    for (var entry in controllers.entries)
-                      entry.key: entry.value.text.trim(),
-                  };
-
-                  try {
-                    await dio.patch(
-                      '/users/$id',
-                      data: updatedData,
-                      options: Options(
-                        headers: {'Content-Type': 'application/json'},
-                      ),
-                    );
-                    _showSnackbar('Update successful');
-                    Navigator.of(context).pop();
-                  } catch (e) {
-                    _showSnackbar('Update failed');
-                  }
-                },
-                child: const Text('Confirm'),
-              ),
-            ],
-          );
-        },
-      );
+      setState(() => feedback = "✅ Controller deleted.");
+      await _fetchControllers();
     } catch (e) {
-      _showSnackbar('Failed to fetch user');
+      setState(() => feedback = "❌ Error deleting controller.");
     }
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
-    return ExpansionTile(
-      title: Text('User ID: ${user['id']}'),
-      children: [
-        ListTile(title: Text('Name: ${user['name']}')),
-        ListTile(title: Text('Surname: ${user['surname']}')),
-        ListTile(title: Text('Username: ${user['username']}')),
-        ListTile(title: Text('Email: ${user['email']}')),
-        ListTile(title: Text('Role: ${user['role']}')),
-      ],
+  void _openEditDialog() async {
+    final updated = await showDialog(
+      context: context,
+      builder: (_) => AddEditControllerDialog(),
     );
+    if (updated == true) _fetchControllers();
   }
+
 
   @override
   Widget build(BuildContext context) {
-    final inputId = _idController.text.trim();
-    final validId = _isValidId(inputId);
-
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            TextField(
-              controller: _idController,
-              decoration: const InputDecoration(
-                labelText: 'Please enter user ID',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _getUsers,
-                  child: const Text('Get Users'),
-                ),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _deleteUser,
-                  child: const Text('Delete User(s)'),
-                ),
-                ElevatedButton(
-                  onPressed:
-                      (inputId.isNotEmpty && validId && !_isLoading)
-                          ? _updateUserDialog
-                          : null,
-                  child: const Text('Modify User'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
             Expanded(
-              child:
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView(
-                        children: [
-                          if (_singleUser != null) _buildUserCard(_singleUser!),
-                          ..._users
-                              .map<Widget>((user) => _buildUserCard(user))
-                              .toList(),
-                        ],
-                      ),
+              child: loading
+                  ? Center(child: CircularProgressIndicator())
+                  : controllers.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "No controllers found. Add one below.",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton.icon(
+                                icon: Icon(Icons.person_add),
+                                label: Text("Add new controller"),
+                                onPressed: () => _openEditDialog(),
+                              ),
+                              if (feedback != null) ...[
+                                const SizedBox(height: 12),
+                                Text(feedback!, style: TextStyle(color: Colors.red)),
+                              ],
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: controllers.length,
+                          itemBuilder: (_, index) {
+                            final controller = controllers[index];
+                            return Card(
+                              child: ListTile(
+                                title: Text("${controller['username']}"),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ...controller['zones'].map((zone) {
+                                      return Text("Zone: ${zone['zone_id']} - ${zone['zone_name']}");
+                                    }).toList(),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteController(controller['id']),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
+            if (controllers.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                icon: Icon(Icons.person_add),
+                label: Text("Add new controller"),
+                onPressed: () => _openEditDialog(),
+              ),
+            ],
+            if (feedback != null && controllers.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(feedback!, style: TextStyle(color: Colors.red)),
+            ],
           ],
         ),
       ),
