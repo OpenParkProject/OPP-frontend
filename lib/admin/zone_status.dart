@@ -243,6 +243,41 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     }
   }
 
+  Future<void> _deleteZone(int zoneId) async {
+  try {
+    await DioClient().setAuthToken();
+    final dio = DioClient().dio;
+    final response = await dio.delete('/zones/$zoneId');
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Zone deleted')));
+      await _fetchZonesAndCalculateDistances();
+    }
+  } catch (e) {
+    debugPrint('Error deleting zone: $e');
+  }
+}
+
+  Future<void> _toggleAvailability(ParkingZone zone) async {
+    try {
+      await DioClient().setAuthToken();
+      final dio = DioClient().dio;
+      final response = await dio.patch('/zones/${zone.id}', data: {
+        'name': zone.name,
+        'available': !zone.available,
+        'geometry': zone.geometry,
+        'metadata': zone.metadata,
+        'price_offset': zone.priceOffset,
+        'price_lin': zone.priceLin,
+        'price_exp': zone.priceExp,
+      });
+      if (response.statusCode == 200) {
+        await _fetchZonesAndCalculateDistances();
+      }
+    } catch (e) {
+      debugPrint('Error updating availability: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -270,53 +305,83 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Your position:",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
                           Text("$userLat, $userLong\n"),
-                          Text(
-                            "Available zones (nearest first):",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          Text("Available zones (nearest first):",
+                              style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(height: 10),
                           Expanded(
                             child: ListView.builder(
                               itemCount: zonesWithDistance.length,
                               itemBuilder: (context, index) {
-                                final zone =
-                                    zonesWithDistance[index]['zone'] as ParkingZone;
-                                final distance =
-                                    zonesWithDistance[index]['distance'] as double;
-                                return ListTile(
-                                  title: Text(zone.name),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        "€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km",
-                                      ),
-                                      Text(
-                                        "Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
-                                        style: TextStyle(fontSize: 12),
-                                      ),
-                                      zone.metadata['special_rules'] != null
-                                          ? Text(
-                                              "Note: ${zone.metadata['special_rules']}",
-                                              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                                            )
-                                          : SizedBox.shrink(),
-                                    ],
-                                  ),
-                                  trailing: Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: zone.available ? Colors.green : Colors.red,
-                                      borderRadius: BorderRadius.circular(4),
+                                final zone = zonesWithDistance[index]['zone'] as ParkingZone;
+                                final distance = zonesWithDistance[index]['distance'] as double;
+                                return Card(
+                                  elevation: 2,
+                                  margin: EdgeInsets.symmetric(vertical: 6),
+                                  child: ListTile(
+                                    title: Text(zone.name),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
+                                        Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
+                                            style: TextStyle(fontSize: 12)),
+                                        if (zone.metadata['special_rules'] != null)
+                                          Text("Note: ${zone.metadata['special_rules']}",
+                                              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                                      ],
                                     ),
-                                    child: Text(
-                                      zone.available ? 'Available' : 'Full',
-                                      style: TextStyle(color: Colors.white),
+                                    trailing: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            IconButton(
+                                              icon: Icon(Icons.delete, color: Colors.red),
+                                              tooltip: 'Delete zone',
+                                              onPressed: () async {
+                                                final confirmed = await showDialog<bool>(
+                                                  context: context,
+                                                  builder: (context) => AlertDialog(
+                                                    title: Text('Delete Zone'),
+                                                    content: Text('Are you sure you want to delete "${zone.name}"?'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, false),
+                                                        child: Text('Cancel'),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () => Navigator.pop(context, true),
+                                                        child: Text('Delete', style: TextStyle(color: Colors.red)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                                if (confirmed == true) {
+                                                  await _deleteZone(zone.id);
+                                                }
+                                              },
+                                            ),
+                                            SizedBox(width: 16),
+                                            Switch(
+                                              value: zone.available,
+                                              onChanged: (_) => _toggleAvailability(zone),
+                                              activeColor: Colors.green,
+                                              inactiveThumbColor: Colors.red,
+                                            ),
+                                            SizedBox(width: 4),
+                                            Text(
+                                              zone.available ? 'Active' : 'Inactive',
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: zone.available ? Colors.green : Colors.red,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      ],
                                     ),
                                   ),
                                 );
@@ -324,15 +389,21 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                             ),
                           ),
                           SizedBox(height: 10),
-                          TextButton(onPressed: _addZone,
-                              style: TextButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          Center(
+                            child: ElevatedButton.icon(
+                              onPressed: _addZone,
+                              icon: Icon(Icons.add_location_alt_rounded),
+                              label: Text("Add new zone"),
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                                 textStyle: TextStyle(fontSize: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
-                              child: Text("Add zone"),
                             ),
-                        ],
+                          ),
+                          ],
                       ),
                     ),
     );
