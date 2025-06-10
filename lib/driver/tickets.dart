@@ -127,8 +127,11 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
               ),
             ],
             SizedBox(height: 6),
-            Row(children: [Icon(Icons.location_on_outlined, size: 16), SizedBox(width: 6), Text("Zone: A")]),
-            SizedBox(height: 10),
+            Row(children: [
+              Icon(Icons.location_on_outlined, size: 16),
+              SizedBox(width: 6),
+              Text("Zone: ${ticket['zone_id'] ?? 'Unknown'}"),
+            ]),            SizedBox(height: 10),
             if (!isExpired || (isExpired && paid))
               Center(
                 child: Wrap(

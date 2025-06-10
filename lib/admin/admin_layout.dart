@@ -4,7 +4,7 @@ import 'package:openpark/admin/fine_management.dart';
 import 'package:openpark/admin/ticket_management.dart';
 import 'package:openpark/admin/totem_location.dart';
 import 'package:openpark/admin/user_management.dart';
-import 'package:openpark/admin/zone_statues.dart';
+import 'package:openpark/admin/zone_status.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../login.dart';

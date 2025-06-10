@@ -125,7 +125,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> _determinePosition() async {
-    if (UniversalPlatform.isLinux || UniversalPlatform.isWeb) {
+    if (UniversalPlatform.isLinux || UniversalPlatform.isWeb || UniversalPlatform.isWindows) {
       await getLocationFromIP();
     } else if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
