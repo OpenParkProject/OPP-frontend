@@ -13,10 +13,6 @@ class DriversManagementPage extends StatefulWidget {
 }
 
 class _DriversManagementPageState extends State<DriversManagementPage> {
-  final _plateController = TextEditingController();
-  final _modelController = TextEditingController();
-  final _brandController = TextEditingController();
-
   List<Map<String, String>> userPlates = [];
   bool loadingPlates = true;
   String? _feedbackMessage;
@@ -60,65 +56,15 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
     }
   }
 
-  Future<void> _addCar() async {
-    final plate = _plateController.text.trim().toUpperCase();
-    final model = _modelController.text.trim();
-    final brand = _brandController.text.trim();
-
-    if (plate.isEmpty || brand.isEmpty || model.isEmpty) {
-      setState(() => _feedbackMessage = "❗ Please fill all fields.");
-      return;
-    }
-
-    try {
-      await DioClient().setAuthToken();
-      await DioClient().dio.post(
-        "/cars",
-        data: {"plate": plate, "brand": brand, "model": model},
-      );
-
-      setState(() {
-        _feedbackMessage = "✅ Vehicle $plate registered successfully.";
-        _plateController.clear();
-        _brandController.clear();
-        _modelController.clear();
-      });
-
-      await _fetchPlates();
-    } catch (e) {
-      String msg = "❌ Failed to register vehicle.";
-      if (e is DioError && e.response?.data is Map) {
-        final data = e.response?.data;
-        msg = "❌ ${data?['error'] ?? data?['detail'] ?? 'Unknown error'}";
-      }
-      setState(() => _feedbackMessage = msg);
-    }
-  }
-
   Future<void> _deleteCar(String plate) async {
     try {
       await DioClient().setAuthToken();
-      await DioClient().dio.delete("/cars/$plate");
+      await DioClient().dio.delete("/cars");
 
-      setState(() => _feedbackMessage = "✅ Vehicle $plate deleted.");
+      setState(() => _feedbackMessage = "✅ Vehicles deleted.");
       await _fetchPlates();
     } catch (e) {
-      setState(() => _feedbackMessage = "❌ Failed to delete $plate");
-    }
-  }
-
-  Future<void> _editCar(String oldPlate, String brand, String model) async {
-    try {
-      await DioClient().setAuthToken();
-      await DioClient().dio.patch(
-        "/cars/$oldPlate",
-        data: {"plate": oldPlate, "brand": brand, "model": model},
-      );
-
-      setState(() => _feedbackMessage = "✅ $oldPlate updated.");
-      await _fetchPlates();
-    } catch (e) {
-      setState(() => _feedbackMessage = "❌ Failed to update $oldPlate");
+      setState(() => _feedbackMessage = "❌ Failed to delete");
     }
   }
 
@@ -166,58 +112,6 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () {
-                                    _brandController.text = car['brand'] ?? '';
-                                    _modelController.text = car['model'] ?? '';
-                                    showDialog(
-                                      context: context,
-                                      builder:
-                                          (context) => AlertDialog(
-                                            title: Text("Edit $plate"),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                TextField(
-                                                  controller: _brandController,
-                                                  decoration: InputDecoration(
-                                                    labelText: "Brand",
-                                                  ),
-                                                ),
-                                                TextField(
-                                                  controller: _modelController,
-                                                  decoration: InputDecoration(
-                                                    labelText: "Model",
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () =>
-                                                        Navigator.pop(context),
-                                                child: Text("Cancel"),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.pop(context);
-                                                  _editCar(
-                                                    plate,
-                                                    _brandController.text
-                                                        .trim(),
-                                                    _modelController.text
-                                                        .trim(),
-                                                  );
-                                                },
-                                                child: Text("Save"),
-                                              ),
-                                            ],
-                                          ),
-                                    );
-                                  },
-                                ),
-                                IconButton(
                                   icon: Icon(Icons.delete, color: Colors.red),
                                   onPressed: () => _deleteCar(plate),
                                 ),
@@ -228,21 +122,6 @@ class _DriversManagementPageState extends State<DriversManagementPage> {
               }),
               Divider(),
             ],
-            Text("Modify a vehicle"),
-            TextField(
-              controller: _plateController,
-              decoration: InputDecoration(labelText: "License Plate"),
-            ),
-            TextField(
-              controller: _brandController,
-              decoration: InputDecoration(labelText: "Brand"),
-            ),
-            TextField(
-              controller: _modelController,
-              decoration: InputDecoration(labelText: "Model"),
-            ),
-            SizedBox(height: 10),
-            ElevatedButton(onPressed: _addCar, child: Text("Modify Vehicle")),
             if (_feedbackMessage != null) ...[
               SizedBox(height: 20),
               Text(_feedbackMessage!, style: TextStyle(color: Colors.blue)),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:openpark/admin/controller_management.dart';
 import 'package:openpark/admin/driver_management.dart';
 import 'package:openpark/admin/fine_management.dart';
 import 'package:openpark/admin/ticket_management.dart';
@@ -31,11 +32,11 @@ class _AdminLayoutState extends State<AdminLayout> {
   ];
 
   final List<Widget> _pages = [
-    DriversManagementPage(),
+    ControllerManagementPage(),
     FineManagementPage(),
     TotemLocationPage(),
     TicketManagementPage(),
-    UserManagementPage(),
+    DriversManagementPage(),
     ParkingZoneStatusPage(),
   ];
 

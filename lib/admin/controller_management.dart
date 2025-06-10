@@ -1,15 +1,19 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+
 import '../API/client.dart';
 
-class UserManagementPage extends StatefulWidget {
-  const UserManagementPage({super.key});
+class ControllerManagementPage extends StatefulWidget {
+  const ControllerManagementPage({super.key});
 
   @override
-  State<UserManagementPage> createState() => _UserManagementPageState();
+  State<ControllerManagementPage> createState() =>
+      _ControllerManagementPageState();
 }
 
-class _UserManagementPageState extends State<UserManagementPage> {
+// 省略 import 和 class 定义部分...
+
+class _ControllerManagementPageState extends State<ControllerManagementPage> {
   final TextEditingController _idController = TextEditingController();
   List<dynamic> _users = [];
   Map<String, dynamic>? _singleUser;
@@ -36,15 +40,26 @@ class _UserManagementPageState extends State<UserManagementPage> {
       if (id.isEmpty) {
         final response = await dio.get('/users');
         setState(() {
-          _users = response.data;
+          _users =
+              (response.data as List)
+                  .where((user) => user['role'] == 'controller')
+                  .toList();
           _singleUser = null;
         });
       } else if (_isValidId(id)) {
         final response = await dio.get('/users/$id');
-        setState(() {
-          _singleUser = response.data;
-          _users = [];
-        });
+        if (response.data['role'] == 'controller') {
+          setState(() {
+            _singleUser = response.data;
+            _users = [];
+          });
+        } else {
+          setState(() {
+            _singleUser = null;
+            _users = [];
+          });
+          _showSnackbar('User is not a controller');
+        }
       } else {
         _showSnackbar('Please enter a valid numeric ID');
       }
@@ -67,12 +82,19 @@ class _UserManagementPageState extends State<UserManagementPage> {
         final response = await dio.get('/users');
         final users = response.data as List;
         for (var user in users) {
-          await dio.delete('/users/${user['id']}');
+          if (user['role'] == 'controller') {
+            await dio.delete('/users/${user['id']}');
+          }
         }
-        _showSnackbar('All users deleted');
+        _showSnackbar('All controller users deleted');
       } else if (_isValidId(id)) {
-        await dio.delete('/users/$id');
-        _showSnackbar('Delete successful');
+        final response = await dio.get('/users/$id');
+        if (response.data['role'] == 'controller') {
+          await dio.delete('/users/$id');
+          _showSnackbar('Delete successful');
+        } else {
+          _showSnackbar('Cannot delete non-controller user');
+        }
       } else {
         _showSnackbar('Please enter a valid numeric ID');
       }
@@ -90,68 +112,76 @@ class _UserManagementPageState extends State<UserManagementPage> {
       return;
     }
 
-    Map<String, TextEditingController> controllers = {
-      'name': TextEditingController(),
-      'surname': TextEditingController(),
-      'username': TextEditingController(),
-      'email': TextEditingController(),
-      'role': TextEditingController(),
-    };
+    try {
+      await DioClient().setAuthToken();
+      final dio = DioClient().dio;
+      final response = await dio.get('/users/$id');
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Modify user'),
-          content: SingleChildScrollView(
-            child: Column(
-              children:
-                  controllers.entries
-                      .map(
-                        (entry) => TextField(
-                          controller: entry.value,
-                          decoration: InputDecoration(labelText: entry.key),
-                        ),
-                      )
-                      .toList(),
+      if (response.data['role'] != 'controller') {
+        _showSnackbar('Only controller users can be modified');
+        return;
+      }
+
+      Map<String, TextEditingController> controllers = {
+        'name': TextEditingController(),
+        'surname': TextEditingController(),
+        'username': TextEditingController(),
+        'email': TextEditingController(),
+      };
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Modify user'),
+            content: SingleChildScrollView(
+              child: Column(
+                children:
+                    controllers.entries
+                        .map(
+                          (entry) => TextField(
+                            controller: entry.value,
+                            decoration: InputDecoration(labelText: entry.key),
+                          ),
+                        )
+                        .toList(),
+              ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final updatedData = {
-                  for (var entry in controllers.entries)
-                    entry.key: entry.value.text.trim(),
-                };
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  final updatedData = {
+                    for (var entry in controllers.entries)
+                      entry.key: entry.value.text.trim(),
+                  };
 
-                try {
-                  await DioClient().setAuthToken();
-                  final dio = DioClient().dio;
-
-                  await dio.patch(
-                    '/users/$id',
-                    data: updatedData,
-                    options: Options(
-                      headers: {'Content-Type': 'application/json'},
-                    ),
-                  );
-
-                  _showSnackbar('Update successful');
-                  Navigator.of(context).pop();
-                } catch (e) {
-                  _showSnackbar('Update failed');
-                }
-              },
-              child: const Text('Confirm'),
-            ),
-          ],
-        );
-      },
-    );
+                  try {
+                    await dio.patch(
+                      '/users/$id',
+                      data: updatedData,
+                      options: Options(
+                        headers: {'Content-Type': 'application/json'},
+                      ),
+                    );
+                    _showSnackbar('Update successful');
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    _showSnackbar('Update failed');
+                  }
+                },
+                child: const Text('Confirm'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      _showSnackbar('Failed to fetch user');
+    }
   }
 
   Widget _buildUserCard(Map<String, dynamic> user) {
