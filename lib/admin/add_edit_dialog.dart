@@ -2,16 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
 
-class AddEditControllerDialog extends StatefulWidget {
-  final Map<String, dynamic>? existing;
-
-  const AddEditControllerDialog({this.existing, super.key});
-
-  @override
-  State<AddEditControllerDialog> createState() => _AddEditControllerDialogState();
+// Estensione per capitalizzare
+extension StringExtension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
 }
 
-class _AddEditControllerDialogState extends State<AddEditControllerDialog> {
+class AddEditDialog extends StatefulWidget {
+  final Map<String, dynamic>? existing;
+  final String role; // "controller" o "installer"
+
+  const AddEditDialog({this.existing, required this.role, super.key});
+
+  @override
+  State<AddEditDialog> createState() => _AddEditDialogState();
+}
+
+class _AddEditDialogState extends State<AddEditDialog> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   List<Map<String, dynamic>> allZones = [];
@@ -26,7 +35,6 @@ class _AddEditControllerDialogState extends State<AddEditControllerDialog> {
     super.initState();
     if (isEdit) {
       _usernameController.text = widget.existing!['username'] ?? '';
-      // Assume che le zone siano disponibili come lista di ID nell’utente
       selectedZoneIds = Set<int>.from(widget.existing!['zone_ids'] ?? []);
     }
     _loadZones();
@@ -40,17 +48,14 @@ class _AddEditControllerDialogState extends State<AddEditControllerDialog> {
       final response = await dio.get('/zones');
       final zones = List<Map<String, dynamic>>.from(response.data);
 
-      // Per ciascuna zona, puoi opzionalmente verificare se ha utenti
-      // ma NON è obbligatorio per mostrare la lista di zone
       setState(() {
         allZones = zones.where((z) => z.containsKey('id') && z.containsKey('name')).toList();
       });
 
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
-        // Backend ha risposto 404: zone non trovate, o senza utenti → continua comunque
         setState(() {
-          allZones = []; // o [] se vuoi mostrare che non ce ne sono
+          allZones = [];
           error = "⚠️ No zones found.";
         });
       } else {
@@ -85,37 +90,34 @@ class _AddEditControllerDialogState extends State<AddEditControllerDialog> {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final email = "$timestamp@gmail.com";
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final email = "$timestamp@gmail.com";
 
       final data = {
-        "name": "Controller",
-        "surname": "Controller",
+        "name": widget.role.capitalize(),
+        "surname": widget.role.capitalize(),
         "email": email,
         "username": username,
-        "role": "controller",
+        "role": widget.role,
         if (!isEdit) "password": password,
       };
 
       if (isEdit) {
-        // PATCH su utente esistente
         await dio.patch("/users/${widget.existing!['id']}", data: data);
       } else {
-        // STEP 1: Registrazione utente
         await dio.post("/register", data: data);
 
-        // STEP 2: Assegnazione zone
         for (final zid in zones) {
           await dio.post("/zones/$zid/users", data: {
             "username": username,
-            "role": "controller",
+            "role": widget.role,
           });
         }
       }
 
       Navigator.pop(context, true);
     } catch (e) {
-      setState(() => error = "❌ Failed to ${isEdit ? 'update' : 'create'} controller.");
+      setState(() => error = "❌ Failed to ${isEdit ? 'update' : 'create'} ${widget.role}.");
     } finally {
       setState(() => loading = false);
     }
@@ -124,7 +126,9 @@ class _AddEditControllerDialogState extends State<AddEditControllerDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(isEdit ? "Edit Controller" : "Add Controller"),
+      title: Text(isEdit
+          ? "Edit ${widget.role.capitalize()}"
+          : "Add ${widget.role.capitalize()}"),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,

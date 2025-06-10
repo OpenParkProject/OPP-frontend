@@ -277,16 +277,13 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                             final zone = zonesWithDistance[index]['zone'] as ParkingZone;
                             final distance = zonesWithDistance[index]['distance'] as double;
                             return ListTile(
-                              title: Text(zone.name),
+                              title: Text("${zone.id} - ${zone.name}"),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
                                   if (zone.metadata['max_hours'] != null)
-                                    Text(
-                                      "Max hours: ${zone.metadata['max_hours']}",
-                                      style: TextStyle(fontSize: 12),
-                                    ),
+                                    Text("Max hours: ${zone.metadata['max_hours']}", style: TextStyle(fontSize: 12)),
                                 ],
                               ),
                               trailing: Row(
@@ -295,35 +292,38 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                   Container(
                                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: zone.available ? Colors.green : Colors.red,
+                                      color: zone.available ? Colors.green : Colors.grey,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      zone.available ? 'Available' : 'Full',
+                                      zone.available ? 'Available' : 'Unavailable',
                                       style: TextStyle(color: Colors.white, fontSize: 12),
                                     ),
                                   ),
                                   SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward_ios),
+                                  Icon(Icons.arrow_forward_ios, color: zone.available ? null : Colors.grey),
                                 ],
                               ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => MyCarsPage(
-                                      onPlateSelected: (plate) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => SelectDurationPage(plate: plate, selectedZone: zone),
+                              enabled: zone.available,
+                              onTap: zone.available
+                                  ? () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => MyCarsPage(
+                                            onPlateSelected: (plate) {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (_) => SelectDurationPage(plate: plate, selectedZone: zone),
+                                                ),
+                                              );
+                                            },
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
+                                        ),
+                                      );
+                                    }
+                                  : null,
                             );
                           },
                         ),

@@ -66,7 +66,24 @@ class _LoginPageState extends State<LoginPage> {
         if (role == "admin") {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
         } else if (role == "controller") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])));
+          try {
+            final zonesResponse = await dio.get('/zones/me');
+            final prefs = await SharedPreferences.getInstance();
+
+            final zoneList = zonesResponse.data as List<dynamic>;
+            final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+            final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+            await prefs.setStringList('zone_ids', zoneIds);
+            await prefs.setStringList('zone_names', zoneNames);
+          } catch (e) {
+            _showMessage("Failed to fetch zones for controller");
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])),
+          );
         } else {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: user['username'])));
         }

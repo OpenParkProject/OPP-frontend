@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:openpark/admin/controller_management.dart';
-import 'package:openpark/admin/driver_management.dart';
-import 'package:openpark/admin/fine_management.dart';
-import 'package:openpark/admin/ticket_management.dart';
+import 'package:openpark/admin/installer_management.dart';
 import 'package:openpark/admin/totem_location.dart';
 import 'package:openpark/admin/zone_status.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,29 +21,23 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   final List<String> _titles = [
     "Controllers",
-    "Fines",
+    "Installers",
     "Totems",
-    "Tickets",
-    "Check Plate",
     "Zones",
   ];
 
   final List<Widget> _pages = [
     ControllerManagementPage(),
-    FineManagementPage(),
+    InstallerManagementPage(),
     TotemLocationPage(),
-    TicketManagementPage(),
-    DriversManagementPage(),
     ParkingZoneStatusPage(),
   ];
 
   final List<Icon> _icons = [
     Icon(Icons.shield),
-    Icon(Icons.receipt_long),
-    Icon(Icons.place),
-    Icon(Icons.confirmation_num),
-    Icon(Icons.search),
-    Icon(Icons.map_outlined),
+    Icon(Icons.engineering),
+    Icon(Icons.location_on),       
+    Icon(Icons.map),
   ];
 
   Future<void> _logout() async {

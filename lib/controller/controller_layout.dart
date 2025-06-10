@@ -11,6 +11,7 @@ import 'chalked_cars.dart';
 import 'fines_issued.dart';
 import 'manual_check.dart';
 import 'ocr.dart';
+import 'assigned_zones.dart';
 
 bool get isOcrSupported =>
     UniversalPlatform.isAndroid || UniversalPlatform.isLinux;
@@ -41,6 +42,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
     "Manual Plate Check",
     "Chalked Cars",
     "Fines Issued",
+    "Assigned Zones",
   ];
 
   List<Widget> get _pages => [
@@ -51,6 +53,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
     ManualCheckPage(username: widget.username),
     ChalkedCarsPage(username: widget.username),
     const FinesIssuedPage(),
+    AssignedZonesPage(username: widget.username),
   ];
 
   void _onItemTapped(int index) {
@@ -211,6 +214,10 @@ class _ControllerLayoutState extends State<ControllerLayout> {
           const BottomNavigationBarItem(
             icon: Icon(Icons.receipt),
             label: "Fines",
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.map),
+            label: "My Zones",
           ),
         ],
       ),

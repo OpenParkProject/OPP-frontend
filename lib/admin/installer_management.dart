@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../API/client.dart';
-import 'add_edit_dialog.dart';
+import 'add_edit_dialog.dart'; // Assicurati di avere o creare questo file
 
-class ControllerManagementPage extends StatefulWidget {
-  const ControllerManagementPage({super.key});
+class InstallerManagementPage extends StatefulWidget {
+  const InstallerManagementPage({super.key});
   @override
-  State<ControllerManagementPage> createState() => _ControllerManagementPageState();
+  State<InstallerManagementPage> createState() => _InstallerManagementPageState();
 }
 
-class _ControllerManagementPageState extends State<ControllerManagementPage> {
-  List<Map<String, dynamic>> controllers = [];
+class _InstallerManagementPageState extends State<InstallerManagementPage> {
+  List<Map<String, dynamic>> installers = [];
   bool loading = true;
   String? feedback;
 
   @override
   void initState() {
     super.initState();
-    _fetchControllers();
+    _fetchInstallers();
   }
 
-  Future<void> _fetchControllers() async {
+  Future<void> _fetchInstallers() async {
     setState(() {
       loading = true;
-      controllers = [];
+      installers = [];
       feedback = null;
     });
 
@@ -38,7 +39,7 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
       final zonesRes = await dio.get("/zones");
       final allZones = List<Map<String, dynamic>>.from(zonesRes.data);
 
-      Map<String, List<Map<String, dynamic>>> groupedControllers = {};
+      Map<String, List<Map<String, dynamic>>> groupedInstallers = {};
 
       // 3. For each zone, get the assigned users
       for (final zone in allZones) {
@@ -49,11 +50,11 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
           final zoneName = zone['name'] ?? 'Unnamed Zone';
 
           for (final user in zoneUsers) {
-            if (user['role'] == 'controller' && (user['assigned_by'] ?? '') == currentAdmin) {
-              if (!groupedControllers.containsKey(user['username'])) {
-                groupedControllers[user['username']] = [];
+            if (user['role'] == 'installer' && (user['assigned_by'] ?? '') == currentAdmin) {
+              if (!groupedInstallers.containsKey(user['username'])) {
+                groupedInstallers[user['username']] = [];
               }
-              groupedControllers[user['username']]!.add({
+              groupedInstallers[user['username']]!.add({
                 'zone_id': zid,
                 'user_id': user['id'],
                 'zone_name': zoneName,
@@ -68,9 +69,9 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
       }
 
       // 5. Flatten the grouped data into a list
-      List<Map<String, dynamic>> allAssignedControllers = [];
-      groupedControllers.forEach((username, userZones) {
-        allAssignedControllers.add({
+      List<Map<String, dynamic>> allAssignedInstallers = [];
+      groupedInstallers.forEach((username, userZones) {
+        allAssignedInstallers.add({
           'username': username,
           'id': userZones.first['user_id'],
           'zones': userZones,
@@ -78,69 +79,38 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
       });
 
       setState(() {
-        controllers = allAssignedControllers;
+        installers = allAssignedInstallers;
         loading = false;
       });
     } catch (e) {
       setState(() {
-        feedback = "❌ Failed to load controllers.";
+        feedback = "❌ Failed to load installers.";
         loading = false;
       });
     }
   }
 
-  Future<void> _deleteController(int zoneUserId, String username, List<dynamic> zones) async {
+  Future<void> _deleteInstaller(int userId) async {
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      // Elimina da tutte le zone
-      for (final zone in zones) {
-        final zoneId = zone['zone_id'];
-        try {
-          await dio.delete("/zones/$zoneId/users/$username");
-          debugPrint("✅ Removed from zone $zoneId");
-        } catch (e) {
-          debugPrint("⚠️ Removal from zone $zoneId failed: $e");
-        }
-      }
+      await dio.delete("/users/$userId");
 
-      // Recupera il vero userId dal sistema auth
-      try {
-        final allUsersRes = await dio.get("/users");
-        final allUsers = List<Map<String, dynamic>>.from(allUsersRes.data);
-        final authUser = allUsers.firstWhere(
-          (u) => u['username'] == username,
-          orElse: () => {},
-        );
-
-        if (authUser.isNotEmpty) {
-          final authUserId = authUser['id'];
-          await dio.delete("/users/$authUserId");
-          debugPrint("✅ User $username deleted from auth db");
-        } else {
-          debugPrint("⚠️ No user found for $username");
-        }
-      } catch (e) {
-        debugPrint("⚠️ Error: $e");
-      }
-
-      setState(() => feedback = "✅ Controller deleted from zones and system.");
-      await _fetchControllers();
+      setState(() => feedback = "✅ Installer deleted.");
+      await _fetchInstallers();
     } catch (e) {
-      setState(() => feedback = "❌ Error deleting controller.");
-      debugPrint("❌ General Error: $e");
+      setState(() => feedback = "❌ Error deleting installer.");
     }
   }
 
   void _openEditDialog() async {
     final updated = await showDialog(
       context: context,
-      builder: (_) => AddEditDialog(role: 'controller'),
+      builder: (_) => AddEditDialog(role: 'installer'),
     );
-    if (updated == true) _fetchControllers();
+    if (updated == true) _fetchInstallers();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -152,19 +122,19 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
             Expanded(
               child: loading
                   ? Center(child: CircularProgressIndicator())
-                  : controllers.isEmpty
+                  : installers.isEmpty
                       ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                "No controllers found. Add one below.",
+                                "No installers found. Add one below.",
                                 style: TextStyle(fontSize: 16),
                               ),
                               const SizedBox(height: 20),
                               ElevatedButton.icon(
                                 icon: Icon(Icons.person_add),
-                                label: Text("Add new controller"),
+                                label: Text("Add new installer"),
                                 onPressed: () => _openEditDialog(),
                               ),
                               if (feedback != null) ...[
@@ -175,47 +145,38 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
                           ),
                         )
                       : ListView.builder(
-                          itemCount: controllers.length,
+                          itemCount: installers.length,
                           itemBuilder: (_, index) {
-                            final controller = controllers[index];
+                            final installer = installers[index];
                             return Card(
                               child: ListTile(
-                                title: Text("${controller['username']}"),
+                                title: Text("${installer['username']}"),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    ...controller['zones'].map((zone) {
+                                    ...installer['zones'].map((zone) {
                                       return Text("Zone: ${zone['zone_id']} - ${zone['zone_name']}");
                                     }).toList(),
                                   ],
                                 ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
-                                     onPressed: () => _deleteController(
-                                      controller['id'],
-                                      controller['username'],
-                                      controller['zones'],
-                                    ),
-                                    ),
-                                  ],
+                                trailing: IconButton(
+                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () => _deleteInstaller(installer['id']),
                                 ),
                               ),
                             );
                           },
                         ),
             ),
-            if (controllers.isNotEmpty) ...[
+            if (installers.isNotEmpty) ...[
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 icon: Icon(Icons.person_add),
-                label: Text("Add new controller"),
+                label: Text("Add new installer"),
                 onPressed: () => _openEditDialog(),
               ),
             ],
-            if (feedback != null && controllers.isNotEmpty) ...[
+            if (feedback != null && installers.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(feedback!, style: TextStyle(color: Colors.red)),
             ],

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:openpark/API/client.dart';
 import 'package:openpark/admin/add_zone.dart';
 import 'package:universal_platform/universal_platform.dart';
-import 'zone_map.dart';
 
 class ParkingZone {
   final String name;
@@ -346,64 +345,64 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                                     trailing: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => ZoneMapPage(zone: zone),
-                                                  ),
-                                                );
-                                              },
-                                              child: Text("See on map"),
-                                            ),
-                                            SizedBox(width: 16),
-                                            IconButton(
-                                              icon: Icon(Icons.delete, color: Colors.red),
-                                              tooltip: 'Delete zone',
-                                              onPressed: () async {
-                                                final confirmed = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: Text('Delete Zone'),
-                                                    content: Text('Are you sure you want to delete "${zone.name}"?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, false),
-                                                        child: Text('Cancel'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: Text('Delete', style: TextStyle(color: Colors.red)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                                if (confirmed == true) {
-                                                  await _deleteZone(zone.id);
-                                                }
-                                              },
-                                            ),
-                                            SizedBox(width: 16),
-                                            Switch(
-                                              value: zone.available,
-                                              onChanged: (_) => _toggleAvailability(zone),
-                                              activeColor: Colors.green,
-                                              inactiveThumbColor: Colors.red,
-                                            ),
-                                            SizedBox(width: 4),
-                                            Text(
-                                              zone.available ? 'Active' : 'Inactive',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: zone.available ? Colors.green : Colors.red,
-                                              ),
-                                            ),
-                                          ],
-                                        )
+                                        // Row(
+                                        //   mainAxisSize: MainAxisSize.min,
+                                        //   children: [
+                                        //     TextButton(
+                                        //       onPressed: () {
+                                        //         Navigator.push(
+                                        //           context,
+                                        //           MaterialPageRoute(
+                                        //             builder: (context) => ZoneMapPage(zone: zone),
+                                        //           ),
+                                        //         );
+                                        //       },
+                                        //       child: Text("See on map"),
+                                        //     ),
+                                        //     SizedBox(width: 16),
+                                        //     IconButton(
+                                        //       icon: Icon(Icons.delete, color: Colors.red),
+                                        //       tooltip: 'Delete zone',
+                                        //       onPressed: () async {
+                                        //         final confirmed = await showDialog<bool>(
+                                        //           context: context,
+                                        //           builder: (context) => AlertDialog(
+                                        //             title: Text('Delete Zone'),
+                                        //             content: Text('Are you sure you want to delete "${zone.name}"?'),
+                                        //             actions: [
+                                        //               TextButton(
+                                        //                 onPressed: () => Navigator.pop(context, false),
+                                        //                 child: Text('Cancel'),
+                                        //               ),
+                                        //               TextButton(
+                                        //                 onPressed: () => Navigator.pop(context, true),
+                                        //                 child: Text('Delete', style: TextStyle(color: Colors.red)),
+                                        //               ),
+                                        //             ],
+                                        //           ),
+                                        //         );
+                                        //         if (confirmed == true) {
+                                        //           await _deleteZone(zone.id);
+                                        //         }
+                                        //       },
+                                        //     ),
+                                        //     SizedBox(width: 16),
+                                        //     Switch(
+                                        //       value: zone.available,
+                                        //       onChanged: (_) => _toggleAvailability(zone),
+                                        //       activeColor: Colors.green,
+                                        //       inactiveThumbColor: Colors.red,
+                                        //     ),
+                                        //     SizedBox(width: 4),
+                                        //     Text(
+                                        //       zone.available ? 'Active' : 'Inactive',
+                                        //       style: TextStyle(
+                                        //         fontWeight: FontWeight.bold,
+                                        //         color: zone.available ? Colors.green : Colors.red,
+                                        //       ),
+                                        //     ),
+                                        //   ],
+                                        // )
                                       ],
                                     ),
                                   ),

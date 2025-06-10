@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TicketCheckWidget extends StatefulWidget {
   final String plate;
@@ -17,6 +18,7 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
   List<Map<String, dynamic>> activeTickets = [];
   List<Map<String, dynamic>> recentExpiredTickets = [];
   List<Map<String, dynamic>> filteredHistory = [];
+  List<int> assignedZoneIds = [];
 
   bool _loading = false;
   String? _errorMessage;
@@ -26,7 +28,15 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
   @override
   void initState() {
     super.initState();
-    _fetchTickets();
+    _loadAssignedZones().then((_) => _fetchTickets());
+  }
+
+  Future<void> _loadAssignedZones() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList("assigned_zone_ids");
+    if (ids != null) {
+      assignedZoneIds = ids.map((e) => int.tryParse(e)).whereType<int>().toList();
+    }
   }
 
   Future<void> _fetchTickets() async {
@@ -48,6 +58,7 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
       if (data is List) {
         final now = DateTime.now();
         for (var ticket in data) {
+          if (!assignedZoneIds.contains(ticket['zone_id'])) continue;
           try {
             final start = DateTime.parse(ticket['start_date']).toLocal();
             final end = DateTime.parse(ticket['end_date']).toLocal();
