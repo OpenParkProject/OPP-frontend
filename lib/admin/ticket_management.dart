@@ -38,7 +38,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
           _singleTicket = null;
         });
       } else if (_isValidId(id)) {
-        final res = await dio.get('tickets/$id');
+        final res = await dio.get('/tickets/$id');
         setState(() {
           _singleTicket = res.data;
           _tickets = [];
@@ -62,7 +62,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
     setState(() => _isLoading = true);
     try {
       await DioClient().setAuthToken();
-      final res = await DioClient().dio.delete('tickets/$id');
+      final res = await DioClient().dio.delete('/tickets/$id');
       if (res.statusCode == 200) {
         _showSnackbar('Ticket deleted');
         _getTickets();
@@ -120,7 +120,7 @@ class _TicketManagementPageState extends State<TicketManagementPage> {
                   };
 
                   final res = await DioClient().dio.patch(
-                    'tickets/$id',
+                    '/tickets/$id',
                     data: updatedData,
                   );
                   if (res.statusCode == 200) {
