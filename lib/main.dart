@@ -115,29 +115,32 @@ void main() async {
   tz.initializeTimeZones();
 
   if (UniversalPlatform.isWeb) {
-    // Web-specific code
+    // Web non supporta notifiche native
   } else if (UniversalPlatform.isAndroid) {
-      await AndroidAlarmManager.initialize();
-      await AndroidAlarmManager.periodic(
-        const Duration(minutes: 5),
-        0,
-        checkExpiringTickets,
-        wakeup: true,
-        rescheduleOnReboot: true,
-      );
-  } else if (UniversalPlatform.isLinux) {
-    Timer.periodic(const Duration(minutes: 5), (_) {
-      checkExpiringTickets();
-    });
+    await AndroidAlarmManager.initialize();
+    await AndroidAlarmManager.periodic(
+      const Duration(minutes: 5),
+      0,
+      checkExpiringTickets,
+      wakeup: true,
+      rescheduleOnReboot: true,
+    );
+  } else if (UniversalPlatform.isLinux || UniversalPlatform.isWindows) {
+    Timer.periodic(const Duration(minutes: 5), (_) => checkExpiringTickets());
   } else {
-    throw UnsupportedError('Unsupported platform');
+    debugPrint('Piattaforma non supportata, niente ticket checker');
   }
+
   await flutterLocalNotificationsPlugin.initialize(
     InitializationSettings(
       android: const AndroidInitializationSettings('@mipmap/ic_launcher'),
-      // Add Linux settings
       linux: const LinuxInitializationSettings(
         defaultActionName: 'Open notification',
+      ),
+      windows: const WindowsInitializationSettings(
+        appName: 'OpenPark',
+        appUserModelId: 'com.openpark.app',
+        guid: '12345678-1234-1234-1234-1234567890ab',
       ),
     ),
     onDidReceiveNotificationResponse: (details) {
@@ -147,7 +150,7 @@ void main() async {
     },
   );
 
-  runApp(ParkingApp());
+  runApp(const ParkingApp());
 }
 
 class ParkingApp extends StatelessWidget {

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../API/client.dart';
 import 'payment.dart';
+import 'zone_selection.dart';
 
 class SelectDurationPage extends StatefulWidget {
   final String plate;
+  final ParkingZone selectedZone;
 
-  const SelectDurationPage({required this.plate, super.key});
+  const SelectDurationPage({required this.plate, required this.selectedZone, super.key});
 
   @override
   State<SelectDurationPage> createState() => _SelectDurationPageState();
@@ -14,7 +16,6 @@ class SelectDurationPage extends StatefulWidget {
 
 class _SelectDurationPageState extends State<SelectDurationPage> {
   int _durationMinutes = 60;
-  final double _pricePerMinute = 0.02;
   bool _isHolding = false;
   bool _startNow = true;
 
@@ -22,6 +23,12 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
   final int _maxMinutes = 1440;
   DateTime? _scheduledDate;
   bool _creating = false;
+  double _calculatePrice(int minutes) {
+    final z = widget.selectedZone;
+    final t = minutes / 60.0;
+    return z.priceOffset + z.priceLin * t + z.priceExp * t * t;
+  }
+
 
   void _changeDuration(int delta) {
     setState(() {
@@ -69,7 +76,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
   }
 
   Future<void> _createTicket() async {
-    final cost = _durationMinutes * _pricePerMinute;
+    final cost = _calculatePrice(_durationMinutes);
     final startDate = _startNow
         ? DateTime.now().add(Duration(seconds: 2))
         : (_scheduledDate ?? DateTime.now().add(Duration(minutes: 2)));
@@ -82,6 +89,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
         "plate": widget.plate,
         "start_date": startDate.toUtc().toIso8601String(),
         "duration": _durationMinutes,
+        "zone_id": widget.selectedZone.id,
       });
 
       final ticketId = response.data['id'];
@@ -116,7 +124,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final cost = _durationMinutes * _pricePerMinute;
+    final cost = _calculatePrice(_durationMinutes);
     final now = DateTime.now();
     final DateTime start = _startNow
         ? now.add(Duration(seconds: 2))
@@ -208,7 +216,45 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
                         style: TextStyle(fontSize: 14),
                       ),
                       SizedBox(height: 10),
-                      Text("Estimated cost: €${cost.toStringAsFixed(2)}", style: TextStyle(fontSize: 18)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Estimated cost: €${cost.toStringAsFixed(2)}", style: TextStyle(fontSize: 18)),
+                          SizedBox(width: 6),
+                          IconButton(
+                            icon: Icon(Icons.info_outline, size: 20, color: Colors.grey[600]),
+                            tooltip: "How pricing works",
+                            onPressed: () {
+                              final z = widget.selectedZone;
+                              final offset = z.priceOffset.toStringAsFixed(2);
+                              final lin = z.priceLin.toStringAsFixed(2);
+                              final exp = z.priceExp.toStringAsFixed(2);
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text("How the cost is calculated"),
+                                  content: Text(
+                                    "The parking cost is calculated using a dynamic pricing formula:\n\n"
+                                    "Cost = offset + linear × t + exponential × t²\n\n"
+                                    "Where:\n"
+                                    "- offset = €$offset\n"
+                                    "- linear (€/hour) = €$lin\n"
+                                    "- exponential (€/hour²) = €$exp\n"
+                                    "- t = duration in hours (e.g. 1.5h)\n",
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text("OK"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+
                       SizedBox(height: 40),
 
                       ElevatedButton.icon(

@@ -18,7 +18,7 @@ class ParkingZone {
   final int id;
   final String createdAt;
   final String updatedAt;
-  
+
   // Derived properties
   double? latitude;
   double? longitude;
@@ -42,8 +42,15 @@ class ParkingZone {
   void _extractCoordinates() {
     try {
       final geometryData = jsonDecode(geometry);
+      List<dynamic> coords;
+
       if (geometryData['type'] == 'Polygon') {
-        final coords = geometryData['coordinates'][0];
+        coords = geometryData['coordinates'][0];
+      } else if (geometryData['type'] == 'MultiPolygon') {
+        coords = geometryData['coordinates'][0][0];
+      } else {
+        throw FormatException("Unsupported geometry type: ${geometryData['type']}");
+      }
         
         // Calculate center point of polygon
         double sumLat = 0;
@@ -57,7 +64,6 @@ class ParkingZone {
         
         latitude = sumLat / numPoints;
         longitude = sumLng / numPoints;
-      }
     } catch (e) {
       debugPrint('Error parsing geometry: $e');
       // Default coordinates if parsing fails
@@ -83,6 +89,34 @@ class ParkingZone {
       updatedAt: json['updated_at'] as String,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'available': available,
+      'geometry': geometry,
+      'metadata': metadata,
+      'price_offset': priceOffset,
+      'price_lin': priceLin,
+      'price_exp': priceExp,
+      'id': id,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+    };
+  }
+
+  @override
+  String toString() => 'ParkingZone(name: $name, id: $id)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParkingZone &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 class ParkingZoneSelectionPage extends StatefulWidget {
@@ -104,7 +138,7 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
   }
 
   Future<void> _determinePosition() async {
-    if (UniversalPlatform.isLinux || UniversalPlatform.isWeb) {
+    if (UniversalPlatform.isLinux || UniversalPlatform.isWeb || UniversalPlatform.isWindows) {
       await getLocationFromIP();
     } else if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -282,7 +316,7 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (_) => SelectDurationPage(plate: plate),
+                                            builder: (_) => SelectDurationPage(plate: plate, selectedZone: zone),
                                           ),
                                         );
                                       },
