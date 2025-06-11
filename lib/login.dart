@@ -10,7 +10,7 @@ import 'driver/driver_layout.dart';
 import 'driver/zone_selection.dart';
 import 'API/client.dart';
 import 'installer/install_totem.dart';
-import 'installer/totem_setup.dart';
+import 'installer/totem_otp.dart';
 import 'dart:io';
 import 'forgot_pw.dart';
 import '/superuser/superuser_layout.dart';
@@ -318,7 +318,7 @@ class _LoginPageState extends State<LoginPage> {
                           },
                           onLongPress: () {
                             if (Platform.isWindows || Platform.isLinux) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemPage()));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemOtpPage()));
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Totem setup is only available on desktop devices.")),

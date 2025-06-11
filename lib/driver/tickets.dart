@@ -7,7 +7,6 @@ import 'payment.dart';
 import 'extend_ticket.dart';
 import 'dart:async';
 import 'dart:io';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
@@ -448,24 +447,28 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                   children: [
                     if (!isExpired && !paid)
                       ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            await DioClient().setAuthToken();
-                            await DioClient().dio.delete('/tickets/$id');
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🗑️ Ticket deleted.")));
-                            _fetchTickets();
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Deletion failed.")));
-                          }
-                        },
-                        icon: Icon(Icons.delete, size: 18),
-                        label: Text("Delete"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red.shade400,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                        ),
+                      onPressed: () async {
+                        try {
+                          await DioClient().setAuthToken();
+                          await DioClient().dio.delete('/tickets/$id');
+
+                          setState(() {
+                            scheduledUnpaid.removeWhere((t) => t['id'] == id);
+                          });
+
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🗑️ Ticket deleted.")));
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Deletion failed.")));
+                        }
+                      },
+                      icon: Icon(Icons.delete, size: 18),
+                      label: Text("Delete"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
+                    ),  
                     ElevatedButton.icon(
                       onPressed: paid
                           ? () {

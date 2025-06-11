@@ -68,7 +68,10 @@ class ParkingPaymentPage extends StatelessWidget {
     final toFormatted = "${DateFormat.Hm().format(endDate)} – ${endDate.day}/${endDate.month}";
 
     return Scaffold(
-      appBar: AppBar(title: Text("Checkout"), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        title: Text("Checkout"),
+        automaticallyImplyLeading: true,
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -124,17 +127,25 @@ class ParkingPaymentPage extends StatelessWidget {
                   ),
                   SizedBox(height: 12),
                 ],
-                
                 OutlinedButton.icon(
-                  onPressed: () => _skipPayment(context),
+                  onPressed: () {
+                    if (allowPayLater) {
+                      // Pay later → torna semplicemente indietro
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("💤 You can pay this ticket later."),
+                      ));
+                    } else {
+                      // Cancel ticket → cancella davvero
+                      _skipPayment(context);
+                    }
+                  },
                   icon: Icon(allowPayLater ? Icons.access_time : Icons.cancel),
-                  label: Text(allowPayLater ? "Pay later" : "Cancel ticket creation"),
+                  label: Text(allowPayLater ? "Pay later" : "Cancel and delete ticket"),
                   style: OutlinedButton.styleFrom(
                     minimumSize: Size(double.infinity, 48),
                     foregroundColor: allowPayLater ? null : Colors.red,
-                    side: allowPayLater
-                        ? null
-                        : BorderSide(color: Colors.red),
+                    side: allowPayLater ? null : BorderSide(color: Colors.red),
                   ),
                 ),
               ],

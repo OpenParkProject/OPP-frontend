@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../API/client.dart';
 import 'add_edit_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ControllerManagementPage extends StatefulWidget {
   const ControllerManagementPage({super.key});
@@ -22,7 +23,6 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
 
   Future<void> _fetchControllers() async {
     setState(() {
-      String? currentAdmin;
       loading = true;
       controllers = [];
       feedback = null;
@@ -32,30 +32,41 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      // 1. Get the logged-in admin
+      // 1. Recupera lo username dell'admin (opzionale per testo UI)
       final currentUserRes = await dio.get("/users/me");
       final String admin = currentUserRes.data['username'];
       setState(() {
         currentAdmin = admin;
       });
 
+      // 2. Recupera zone da SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final zoneIds = prefs.getStringList('zone_ids') ?? [];
+      final zoneNames = prefs.getStringList('zone_names') ?? [];
 
-      // 2. Get all zones
-      final zonesRes = await dio.get("/zones");
-      final allZones = List<Map<String, dynamic>>.from(zonesRes.data);
+      if (zoneIds.isEmpty || zoneNames.isEmpty) {
+        setState(() {
+          // feedback = "⚠️ No zones found for this admin.";
+          loading = false;
+        });
+        return;
+      }
 
       Map<String, List<Map<String, dynamic>>> groupedControllers = {};
 
-      // 3. For each zone, get the assigned users
-      for (final zone in allZones) {
-        final zid = zone['id'];
+      // 3. Itera sulle zone salvate in locale
+      for (int i = 0; i < zoneIds.length; i++) {
+        final zid = int.tryParse(zoneIds[i]);
+        if (zid == null) continue;
+
+        final zoneName = zoneNames.length > i ? zoneNames[i] : 'Unnamed Zone';
+
         try {
           final zoneUsersRes = await dio.get("/zones/$zid/users");
           final zoneUsers = List<Map<String, dynamic>>.from(zoneUsersRes.data);
-          final zoneName = zone['name'] ?? 'Unnamed Zone';
 
           for (final user in zoneUsers) {
-            if (user['role'] == 'controller' && (user['assigned_by'] ?? '') == currentAdmin) {
+            if (user['role'] == 'controller') {
               if (!groupedControllers.containsKey(user['username'])) {
                 groupedControllers[user['username']] = [];
               }
@@ -69,11 +80,11 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
           }
         } catch (e) {
           debugPrint("⚠️ Failed to fetch users for zone $zid: $e");
-          continue; // Skip this zone and continue with the others
+          continue;
         }
       }
 
-      // 5. Flatten the grouped data into a list
+      // 4. Raggruppa per controller
       List<Map<String, dynamic>> allAssignedControllers = [];
       groupedControllers.forEach((username, userZones) {
         allAssignedControllers.add({

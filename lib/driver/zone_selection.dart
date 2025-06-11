@@ -5,6 +5,8 @@ import 'package:universal_platform/universal_platform.dart';
 import 'package:http/http.dart' as http;
 import '../API/client.dart';
 import 'plate_input.dart';
+import 'my_cars.dart';
+import 'create_ticket.dart';
 
 class ParkingZone {
   final String name;
@@ -305,13 +307,45 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                               ),
                               enabled: zone.available,
                               onTap: zone.available
-                                  ? () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => SimplePlateInputPage(selectedZone: zone),
-                                        ),
-                                      );
+                                  ? () async {
+                                      try {
+                                        await DioClient().setAuthToken();
+                                        final dio = DioClient().dio;
+                                        final response = await dio.get("/users/me");
+                                        final username = response.data['username'];
+
+                                        if (username == "guest") {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => SimplePlateInputPage(selectedZone: zone),
+                                            ),
+                                          );
+                                        } else {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => MyCarsPage(
+                                              onPlateSelected: (plate) {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) => SelectDurationPage(
+                                                      plate: plate,
+                                                      selectedZone: zone,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                          ),
+                                        ));
+                                      }
+                                      } catch (e) {
+                                        debugPrint("Error fetching user: $e");
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text("Unable to determine user identity.")),
+                                        );
+                                      }
                                     }
                                   : null,
                             );

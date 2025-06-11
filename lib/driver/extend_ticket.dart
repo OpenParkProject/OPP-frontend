@@ -176,6 +176,7 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                           startDate: widget.oldEnd,
                           durationMinutes: newDuration,
                           totalCost: cost,
+                          allowPayLater: false,
                         ),
                       ),
                     );

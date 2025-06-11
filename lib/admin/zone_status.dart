@@ -229,7 +229,6 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     } catch (e) {
       setState(() {
         isLoading = false;
-        errorMessage = 'Error fetching zones: $e';
       });
       debugPrint('Error fetching zones: $e');
     }
