@@ -32,13 +32,13 @@ class _FineManagementPageState extends State<FineManagementPage> {
       final dio = DioClient().dio;
 
       if (id.isEmpty) {
-        final res = await dio.get('fines');
+        final res = await dio.get('/fines');
         setState(() {
           _fines = res.data;
           _singleFine = null;
         });
       } else if (_isValidId(id)) {
-        final res = await dio.get('fines/$id');
+        final res = await dio.get('/fines/$id');
         setState(() {
           _singleFine = res.data;
           _fines = [];
@@ -62,7 +62,7 @@ class _FineManagementPageState extends State<FineManagementPage> {
     setState(() => _isLoading = true);
     try {
       await DioClient().setAuthToken();
-      final res = await DioClient().dio.delete('fines/$id');
+      final res = await DioClient().dio.delete('/fines/$id');
       if (res.statusCode == 200) {
         _showSnackbar('Fine deleted');
         _getFines();
@@ -120,7 +120,7 @@ class _FineManagementPageState extends State<FineManagementPage> {
                   };
 
                   final res = await DioClient().dio.patch(
-                    'fines/$id',
+                    '/fines/$id',
                     data: updatedData,
                   );
                   if (res.statusCode == 200) {
