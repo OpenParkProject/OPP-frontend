@@ -12,6 +12,8 @@ import 'API/client.dart';
 import 'installer/install_totem.dart';
 import 'installer/totem_setup.dart';
 import 'dart:io';
+import 'forgot_pw.dart';
+import '/superuser/superuser_layout.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -63,8 +65,28 @@ class _LoginPageState extends State<LoginPage> {
         String role = user['role'] ?? '';
         globalRole = role; // Store globally for later use
 
-        if (role == "admin") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
+        if (role == "superuser") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => SuperuserLayout(username: user['username'])),
+          );
+        } else if (role == "admin") {
+          try {
+            final zonesResponse = await dio.get('/zones/me');
+            final zoneList = zonesResponse.data as List<dynamic>;
+            final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+            final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+            await prefs.setStringList('zone_ids', zoneIds);
+            await prefs.setStringList('zone_names', zoneNames);
+          } catch (e) {
+            _showMessage("Failed to fetch zones for admin");
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])),
+          );
         } else if (role == "controller") {
           try {
             final zonesResponse = await dio.get('/zones/me');
@@ -288,7 +310,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       if (isSignIn)
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ForgotPasswordPage()),
+                            );
+                          },
                           onLongPress: () {
                             if (Platform.isWindows || Platform.isLinux) {
                               Navigator.push(context, MaterialPageRoute(builder: (_) => TotemPage()));

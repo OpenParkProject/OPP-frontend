@@ -104,6 +104,16 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
       await Future.delayed(Duration(milliseconds: 300));
 
+      String? username;
+      try {
+        final userResp = await DioClient().dio.get("/users/me");
+        username = userResp.data['username'];
+      } catch (_) {
+        username = null;
+      }
+
+      final allowLater = username != "guest";
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -113,6 +123,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
             startDate: startDate,
             durationMinutes: _durationMinutes,
             totalCost: cost,
+            allowPayLater: allowLater,
           ),
         ),
       );
@@ -274,7 +285,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
                                     "Where:\n"
                                     "- offset = €$offset\n"
                                     "- linear (€/hour) = €$lin\n"
-                                    "- exponential (€/hour²) = €$exp\n"
+                                    "- exponential = €$exp\n"
                                     "- t = duration in hours (e.g. 1.5h)\n",
                                   ),
                                   actions: [

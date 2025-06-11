@@ -209,28 +209,54 @@ class _FinesIssuedPageState extends State<FinesIssuedPage> {
                   final fine = fines[index];
                   final date = DateTime.tryParse(fine['date'] ?? '') ?? DateTime.now();
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      leading: const Icon(Icons.receipt_long, size: 28),
-                      title: Text(
-                        fine['plate'] ?? 'UNKNOWN',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.receipt_long, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fine['plate'] ?? 'UNKNOWN',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                ),
+                                Text(
+                                  "Date: ${_formatDateTime(date)}",
+                                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "€${(fine['amount'] as num).toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                fine['paid'] == true ? "Paid" : "Unpaid",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: fine['paid'] == true ? Colors.green : Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      subtitle: Text(
-                        "Date: ${_formatDateTime(date)}",
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      trailing: Text(
-                        "€${fine['amount']?.toStringAsFixed(2) ?? '--'}",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    )
+                    ),
                   );
                 },
               ),

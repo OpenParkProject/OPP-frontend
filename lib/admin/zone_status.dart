@@ -6,6 +6,7 @@ import 'package:openpark/API/client.dart';
 import 'package:openpark/admin/add_zone.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'zone_map.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ParkingZone {
   final String name;
@@ -185,44 +186,46 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     });
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList("zone_ids") ?? [];
+
+      if (ids.isEmpty) {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'No assigned zones.';
+          zonesWithDistance = [];
+        });
+        return;
+      }
+
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
-      // Fetch zones from API
-      final response = await dio.get('/zones');
-      
-      if (response.statusCode == 200) {
-        final List<dynamic> zonesData = response.data;
-        
-        List<ParkingZone> zones = zonesData.map((zoneData) {
-          return ParkingZone.fromJson(zoneData as Map<String, dynamic>);
-        }).toList();
-        
-        // Filter out zones with invalid coordinates
-        zones = zones.where((zone) => 
-          zone.latitude != null && zone.longitude != null).toList();
-        
-        zonesWithDistance = zones.map((zone) {
-          double distanceMeters = Geolocator.distanceBetween(
-            userLat!,
-            userLong!,
-            zone.latitude!,
-            zone.longitude!,
-          );
-          return {'zone': zone, 'distance': distanceMeters};
-        }).toList();
 
-        zonesWithDistance.sort((a, b) => a['distance'].compareTo(b['distance']));
-        
-        setState(() {
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-          errorMessage = 'Failed to load zones: ${response.statusCode}';
-        });
-        debugPrint('Failed to load zones: ${response.statusCode}');
+      List<ParkingZone> zones = [];
+      for (String id in ids) {
+        final res = await dio.get('/zones/$id');
+        zones.add(ParkingZone.fromJson(res.data));
       }
+
+      // Solo zone con coordinate valide
+      zones = zones.where((z) => z.latitude != null && z.longitude != null).toList();
+
+      // Calcolo distanza e ordinamento
+      zonesWithDistance = zones.map((zone) {
+        double distanceMeters = Geolocator.distanceBetween(
+          userLat!,
+          userLong!,
+          zone.latitude!,
+          zone.longitude!,
+        );
+        return {'zone': zone, 'distance': distanceMeters};
+      }).toList();
+
+      zonesWithDistance.sort((a, b) => a['distance'].compareTo(b['distance']));
+
+      setState(() {
+        isLoading = false;
+      });
     } catch (e) {
       setState(() {
         isLoading = false;
@@ -310,8 +313,34 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
           : isLoading
               ? Center(child: CircularProgressIndicator())
               : errorMessage != null
-                  ? Center(child: Text(errorMessage!))
-                  : Padding(
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.info_outline, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text(
+                            "You haven't created any zones yet.",
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: _addZone,
+                            icon: Icon(Icons.add_location_alt_rounded),
+                            label: Text("Create your first zone"),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              textStyle: TextStyle(fontSize: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+              : Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

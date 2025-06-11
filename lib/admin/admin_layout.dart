@@ -42,7 +42,7 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('access_token');
+    await prefs.clear(); // oppure prefs.remove("zone_ids");
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => LoginPage()),

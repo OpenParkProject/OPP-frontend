@@ -40,7 +40,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
   final List<String> _titles = [
     "OCR Plate Check",
     "Manual Plate Check",
-    "Chalked Cars",
+    //"Chalked Cars",
     "Fines Issued",
     "Assigned Zones",
   ];
@@ -51,7 +51,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
     else
       const PlaceholderWidget(title: 'OCR not supported on this device.'),
     ManualCheckPage(username: widget.username),
-    ChalkedCarsPage(username: widget.username),
+    //ChalkedCarsPage(username: widget.username),
     const FinesIssuedPage(),
     AssignedZonesPage(username: widget.username),
   ];
@@ -195,10 +195,10 @@ class _ControllerLayoutState extends State<ControllerLayout> {
             icon: Icon(Icons.edit),
             label: "Manual",
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.directions_car),
-            label: "Chalked",
-          ),
+          // const BottomNavigationBarItem(
+          //   icon: Icon(Icons.directions_car),
+          //   label: "Chalked",
+          // ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.receipt),
             label: "Fines",

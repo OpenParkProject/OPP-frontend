@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import '../API/client.dart';
 import 'fullscreen_map.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddZonePage extends StatefulWidget {
   @override
@@ -143,10 +144,28 @@ class _AddZonePageState extends State<AddZonePage> {
       final response = await dio.post('/zones', data: zoneData);
       
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final createdZone = response.data;
+        final newZoneId = createdZone['id'].toString();
+        
+
+        final newZoneName = createdZone['name'];
+
+        final prefs = await SharedPreferences.getInstance();
+        final ids = prefs.getStringList("zone_ids") ?? [];
+        final names = prefs.getStringList("zone_names") ?? [];
+
+        if (!ids.contains(newZoneId)) {
+          ids.add(newZoneId);
+          names.add(newZoneName);  // aggiungi il nome corrispondente
+          await prefs.setStringList("zone_ids", ids);
+          await prefs.setStringList("zone_names", names);
+        }
+
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Zone created successfully')),
         );
-        Navigator.pop(context, true); // Return success to previous screen
+        Navigator.pop(context, true);
       } else {
         setState(() {
           _errorMessage = 'Failed to create zone: ${response.statusCode}';

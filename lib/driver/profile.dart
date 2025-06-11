@@ -42,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
         surname = userRes.data['surname'];
         username = userRes.data['username'];
         email = userRes.data['email'];
-        joinDate = userRes.data['created_at'] ?? ''; // Assicurati che esista
+        joinDate = userRes.data['created_at'] ?? '';
         numPlates = carRes.data.length;
         numTickets = ticketRes.data.where((t) => t['paid'] == true).length;
 

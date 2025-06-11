@@ -227,58 +227,58 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.edit_location_alt),
-                  label: const Text("Chalk Vehicle"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                  onPressed: () {
-                    final reasonController = TextEditingController();
-                    final notesController = TextEditingController();
-                    showDialog(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: Text("Chalk vehicle $plate"),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(controller: reasonController, decoration: const InputDecoration(labelText: "Reason (optional)")),
-                            TextField(controller: notesController, decoration: const InputDecoration(labelText: "Notes (optional)")),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-                          ElevatedButton(
-                            onPressed: () async {
-                              try {
-                                await DioClient().dio.post('/api/v1/chalk', data: {
-                                  'plate': plate,
-                                  'controller_username': widget.username,
-                                  'reason': reasonController.text,
-                                  'notes': notesController.text,
-                                });
-                                if (!mounted) return;
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vehicle successfully chalked")));
-                              } catch (e) {
-                                if (!mounted) return;
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error chalking vehicle: ${e.toString()}")));
-                              }
-                            },
-                            child: const Text("Confirm Chalk"),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+              // Expanded(
+              //   child: ElevatedButton.icon(
+              //     icon: const Icon(Icons.edit_location_alt),
+              //     label: const Text("Chalk Vehicle"),
+              //     style: ElevatedButton.styleFrom(
+              //       backgroundColor: Colors.orange[600],
+              //       foregroundColor: Colors.white,
+              //       padding: const EdgeInsets.symmetric(vertical: 14),
+              //       textStyle: const TextStyle(fontSize: 16),
+              //     ),
+              //     onPressed: () {
+              //       final reasonController = TextEditingController();
+              //       final notesController = TextEditingController();
+              //       showDialog(
+              //         context: context,
+              //         builder: (_) => AlertDialog(
+              //           title: Text("Chalk vehicle $plate"),
+              //           content: Column(
+              //             mainAxisSize: MainAxisSize.min,
+              //             children: [
+              //               TextField(controller: reasonController, decoration: const InputDecoration(labelText: "Reason (optional)")),
+              //               TextField(controller: notesController, decoration: const InputDecoration(labelText: "Notes (optional)")),
+              //             ],
+              //           ),
+              //           actions: [
+              //             TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+              //             ElevatedButton(
+              //               onPressed: () async {
+              //                 try {
+              //                   await DioClient().dio.post('/api/v1/chalk', data: {
+              //                     'plate': plate,
+              //                     'controller_username': widget.username,
+              //                     'reason': reasonController.text,
+              //                     'notes': notesController.text,
+              //                   });
+              //                   if (!mounted) return;
+              //                   Navigator.pop(context);
+              //                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vehicle successfully chalked")));
+              //                 } catch (e) {
+              //                   if (!mounted) return;
+              //                   Navigator.pop(context);
+              //                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error chalking vehicle: ${e.toString()}")));
+              //                 }
+              //               },
+              //               child: const Text("Confirm Chalk"),
+              //             ),
+              //           ],
+              //         ),
+              //       );
+              //     },
+              //   ),
+              // ),
               const SizedBox(width: 16),
               Expanded(
                 child: ElevatedButton.icon(

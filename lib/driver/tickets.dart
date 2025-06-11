@@ -472,20 +472,22 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                               generateAndDownloadReceipt(ticket);
                             }
                           : () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => ParkingPaymentPage(
-                                    ticketId: id,
-                                    plate: plate,
-                                    startDate: start!,
-                                    durationMinutes: end!.difference(start).inMinutes,
-                                    totalCost: price,
-                                  ),
+                            scheduledUnpaid.clear();
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ParkingPaymentPage(
+                                  ticketId: id,
+                                  plate: plate,
+                                  startDate: start!,
+                                  durationMinutes: end!.difference(start).inMinutes,
+                                  totalCost: price,
+                                  allowPayLater: false,
                                 ),
-                              );
-                              await Future.delayed(Duration(milliseconds: 500));
-                              _fetchTickets();
+                              ),
+                            );
+                            await Future.delayed(Duration(milliseconds: 500));
+                            _fetchTickets();
                             },
                       icon: Icon(paid ? Icons.download : Icons.payment, size: 18),
                       label: Text(paid ? "Download receipt" : "Pay now"),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'pay_fine.dart';
 
 class MyFinesPage extends StatefulWidget {
   const MyFinesPage({super.key});
@@ -70,7 +70,7 @@ class _MyFinesPageState extends State<MyFinesPage> {
             : errorMessage != null
                 ? Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.red)))
                 : fines.isEmpty
-                    ? const Center(child: Text("You have no fines."))
+                    ? const Center(child: Text("You have no fines, thanks for parking respectfully!"))
                     : ListView.builder(
                         itemCount: fines.length,
                         itemBuilder: (context, index) {
@@ -79,28 +79,69 @@ class _MyFinesPageState extends State<MyFinesPage> {
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.all(14),
-                              leading: Icon(
-                                paid ? Icons.check_circle : Icons.warning_amber_rounded,
-                                color: paid ? Colors.green : Colors.red,
-                                size: 30,
-                              ),
-                              title: Text(
-                                "Plate: ${fine['plate']}",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              subtitle: Text("Date: ${_formatDateTime(fine['date'])}"),
-                              trailing: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text("€${fine['amount']?.toStringAsFixed(2) ?? '--'}",
-                                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  Text(paid ? "Paid" : "Unpaid",
-                                      style: TextStyle(
-                                        color: paid ? Colors.green : Colors.red,
-                                        fontSize: 12,
-                                      )),
+                                  Icon(
+                                    paid ? Icons.check_circle : Icons.warning_amber_rounded,
+                                    color: paid ? Colors.green : Colors.red,
+                                    size: 30,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Plate: ${fine['plate']}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text("Date: ${_formatDateTime(fine['date'])}"),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        "€${fine['amount']?.toStringAsFixed(2) ?? '--'}",
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      paid
+                                          ? const Text(
+                                              "Paid",
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            )
+                                          : ElevatedButton(
+                                              onPressed: () async {
+                                                final result = await Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => FinePaymentPage(
+                                                      fineId: fine['id'],
+                                                      amount: (fine['amount'] as num).toDouble(),
+                                                      plate: fine['plate'] ?? '',
+                                                    ),
+                                                  ),
+                                                );
+                                                if (result == true) _fetchUserFines(); // aggiorna stato
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                                textStyle: const TextStyle(fontSize: 13),
+                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                              ),
+                                              child: const Text("Pay Now"),
+                                            ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),

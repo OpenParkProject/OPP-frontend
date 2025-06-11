@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-// Estensione per capitalizzare
 extension StringExtension on String {
   String capitalize() {
     if (isEmpty) return this;
@@ -12,9 +12,15 @@ extension StringExtension on String {
 
 class AddEditDialog extends StatefulWidget {
   final Map<String, dynamic>? existing;
-  final String role; // "controller" o "installer"
+  final String role;
+  final bool noZoneAssignment;
 
-  const AddEditDialog({this.existing, required this.role, super.key});
+  const AddEditDialog({
+    this.existing,
+    required this.role,
+    this.noZoneAssignment = false,
+    super.key,
+  });
 
   @override
   State<AddEditDialog> createState() => _AddEditDialogState();
@@ -37,34 +43,34 @@ class _AddEditDialogState extends State<AddEditDialog> {
       _usernameController.text = widget.existing!['username'] ?? '';
       selectedZoneIds = Set<int>.from(widget.existing!['zone_ids'] ?? []);
     }
-    _loadZones();
+    if (!widget.noZoneAssignment) {
+      _loadZones();
+    }
   }
 
   Future<void> _loadZones() async {
     try {
-      await DioClient().setAuthToken();
-      final dio = DioClient().dio;
+      final prefs = await SharedPreferences.getInstance();
+      final zoneIds = prefs.getStringList("zone_ids") ?? [];
+      final zoneNames = prefs.getStringList("zone_names") ?? [];
 
-      final response = await dio.get('/zones');
-      final zones = List<Map<String, dynamic>>.from(response.data);
+      if (zoneIds.length != zoneNames.length) {
+        setState(() => error = "⚠️ Zone data mismatch.");
+        return;
+      }
 
       setState(() {
-        allZones = zones.where((z) => z.containsKey('id') && z.containsKey('name')).toList();
-      });
-
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        setState(() {
-          allZones = [];
-          error = "⚠️ No zones found.";
+        allZones = List.generate(zoneIds.length, (i) {
+          return {
+            'id': int.tryParse(zoneIds[i]),
+            'name': zoneNames[i],
+          };
         });
-      } else {
-        setState(() => error = '❌ Failed to load zones');
-      }
+      });
     } catch (e) {
-      setState(() => error = '❌ Unexpected error while loading zones');
+      setState(() => error = '❌ Failed to load assigned zones from storage');
     }
-  }
+  } 
 
   Future<void> _submit() async {
     final username = _usernameController.text.trim();
@@ -75,11 +81,7 @@ class _AddEditDialogState extends State<AddEditDialog> {
       setState(() => error = "❗ Username is required.");
       return;
     }
-    if (!isEdit && password.length < 6) {
-      setState(() => error = "❗ Password must be at least 6 characters.");
-      return;
-    }
-    if (zones.isEmpty) {
+    if (!widget.noZoneAssignment && zones.isEmpty) {
       setState(() => error = "❗ Select at least one zone.");
       return;
     }
@@ -107,11 +109,13 @@ class _AddEditDialogState extends State<AddEditDialog> {
       } else {
         await dio.post("/register", data: data);
 
-        for (final zid in zones) {
-          await dio.post("/zones/$zid/users", data: {
-            "username": username,
-            "role": widget.role,
-          });
+        if (!widget.noZoneAssignment) {
+          for (final zid in zones) {
+            await dio.post("/zones/$zid/users", data: {
+              "username": username,
+              "role": widget.role,
+            });
+          }
         }
       }
 
@@ -144,25 +148,29 @@ class _AddEditDialogState extends State<AddEditDialog> {
                 obscureText: true,
               ),
             const SizedBox(height: 12),
-            Text("Assign zones:", style: TextStyle(fontWeight: FontWeight.bold)),
-            if (allZones.isEmpty)
-              Text("No zones found.")
-            else
-              ...allZones.map((zone) {
-                return CheckboxListTile(
-                  title: Text(zone['name'] ?? 'Unnamed zone'),
-                  value: selectedZoneIds.contains(zone['id']),
-                  onChanged: (val) {
-                    setState(() {
-                      if (val == true) {
-                        selectedZoneIds.add(zone['id']);
-                      } else {
-                        selectedZoneIds.remove(zone['id']);
-                      }
-                    });
-                  },
-                );
-              }),
+
+            if (!widget.noZoneAssignment) ...[
+              Text("Assign zones:", style: TextStyle(fontWeight: FontWeight.bold)),
+              if (allZones.isEmpty)
+                Text("No zones found.")
+              else
+                ...allZones.map((zone) {
+                  return CheckboxListTile(
+                    title: Text(zone['name'] ?? 'Unnamed zone'),
+                    value: selectedZoneIds.contains(zone['id']),
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          selectedZoneIds.add(zone['id']);
+                        } else {
+                          selectedZoneIds.remove(zone['id']);
+                        }
+                      });
+                    },
+                  );
+                }),
+            ],
+
             if (error != null) ...[
               SizedBox(height: 12),
               Text(error!, style: TextStyle(color: Colors.red)),

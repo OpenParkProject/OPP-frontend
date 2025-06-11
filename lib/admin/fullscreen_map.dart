@@ -1,7 +1,7 @@
-// fullscreen_map_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FullscreenMapPage extends StatefulWidget {
   final List<LatLng> initialPoints;
@@ -15,12 +15,34 @@ class FullscreenMapPage extends StatefulWidget {
 class _FullscreenMapPageState extends State<FullscreenMapPage> {
   late List<LatLng> polygonPoints;
   final MapController _mapController = MapController();
-  final LatLng _defaultCenter = LatLng(45.4642, 9.1900); // Milano
+  LatLng _center = LatLng(45.4642, 9.1900); // Default to Milan
 
   @override
   void initState() {
     super.initState();
     polygonPoints = List.from(widget.initialPoints);
+    _setInitialLocation();
+  }
+
+  Future<void> _setInitialLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission != LocationPermission.whileInUse &&
+            permission != LocationPermission.always) return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      final current = LatLng(position.latitude, position.longitude);
+      setState(() => _center = current);
+      _mapController.move(current, 14.0);
+    } catch (e) {
+      debugPrint("Could not get location: $e");
+    }
   }
 
   void _addPoint(LatLng point) {
@@ -52,7 +74,7 @@ class _FullscreenMapPageState extends State<FullscreenMapPage> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              center: _defaultCenter,
+              center: _center,
               zoom: 14.0,
               onTap: (tapPosition, latLng) => _addPoint(latLng),
             ),
@@ -92,14 +114,14 @@ class _FullscreenMapPageState extends State<FullscreenMapPage> {
                   mini: true,
                   onPressed: _undoLastPoint,
                   child: Icon(Icons.undo),
-                  heroTag:null,
+                  heroTag: null,
                 ),
                 SizedBox(height: 8),
                 FloatingActionButton(
                   mini: true,
                   onPressed: _clearPoints,
                   child: Icon(Icons.clear),
-                  heroTag:null,
+                  heroTag: null,
                 ),
               ],
             ),

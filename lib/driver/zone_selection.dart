@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:convert';
 import 'package:universal_platform/universal_platform.dart';
-import 'my_cars.dart';
-import 'create_ticket.dart';
 import 'package:http/http.dart' as http;
 import '../API/client.dart';
+import 'plate_input.dart';
 
 class ParkingZone {
   final String name;
@@ -310,16 +309,7 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => MyCarsPage(
-                                            onPlateSelected: (plate) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) => SelectDurationPage(plate: plate, selectedZone: zone),
-                                                ),
-                                              );
-                                            },
-                                          ),
+                                          builder: (_) => SimplePlateInputPage(selectedZone: zone),
                                         ),
                                       );
                                     }

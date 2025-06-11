@@ -10,6 +10,7 @@ class ParkingPaymentPage extends StatelessWidget {
   final DateTime startDate;
   final int durationMinutes;
   final double totalCost;
+  final bool allowPayLater;
 
   const ParkingPaymentPage({
     required this.ticketId,
@@ -17,6 +18,7 @@ class ParkingPaymentPage extends StatelessWidget {
     required this.startDate,
     required this.durationMinutes,
     required this.totalCost,
+    this.allowPayLater = true,
     super.key,
   });
 
@@ -40,12 +42,23 @@ class ParkingPaymentPage extends StatelessWidget {
     }
   }
 
-  void _skipPayment(BuildContext context) {
-    Navigator.popUntil(context, (route) => route.isFirst);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("⚠️ Ticket created but not paid. It's currently not valid."),
-      backgroundColor: Colors.orange,
-    ));
+  void _skipPayment(BuildContext context) async {
+    try {
+      await DioClient().setAuthToken();
+      await DioClient().dio.delete('/tickets/$ticketId');
+
+      Navigator.popUntil(context, (route) => route.isFirst);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("🗑️ Ticket cancelled and deleted."),
+        backgroundColor: Colors.red.shade400,
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("❌ Failed to delete ticket."),
+        backgroundColor: Colors.red,
+      ));
+    }
   }
 
   @override
@@ -112,12 +125,17 @@ class ParkingPaymentPage extends StatelessWidget {
                   SizedBox(height: 12),
                 ],
                 
-                // Pay later option
                 OutlinedButton.icon(
                   onPressed: () => _skipPayment(context),
-                  icon: Icon(Icons.access_time),
-                  label: Text("Pay later"),
-                  style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 48)),
+                  icon: Icon(allowPayLater ? Icons.access_time : Icons.cancel),
+                  label: Text(allowPayLater ? "Pay later" : "Cancel ticket creation"),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 48),
+                    foregroundColor: allowPayLater ? null : Colors.red,
+                    side: allowPayLater
+                        ? null
+                        : BorderSide(color: Colors.red),
+                  ),
                 ),
               ],
             ),
