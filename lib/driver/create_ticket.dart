@@ -182,42 +182,75 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
                             ),
                           ),
                         ),
+                        SizedBox(height: 10),
+                        Builder(
+                          builder: (context) {
+                            final screenWidth = MediaQuery.of(context).size.width;
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          OutlinedButton(onPressed: () => _changeDuration(-60), child: Text("-1h")),
-                          GestureDetector(
-                            onTapDown: (_) => _startHold(-10),
-                            onTapUp: (_) => _stopHold(),
-                            onTapCancel: () => _stopHold(),
-                            child: OutlinedButton(onPressed: () => _changeDuration(-10), child: Text("-10m")),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                            child: Text(
-                              _durationMinutes < 60
-                                  ? "${_durationMinutes % 60}m"
-                                  : "${_durationMinutes ~/ 60}h ${_durationMinutes % 60}m",
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTapDown: (_) => _startHold(10),
-                            onTapUp: (_) => _stopHold(),
-                            onTapCancel: () => _stopHold(),
-                            child: OutlinedButton(onPressed: () => _changeDuration(10), child: Text("+10m")),
-                          ),
-                          OutlinedButton(onPressed: () => _changeDuration(60), child: Text("+1h")),
-                        ],
-                      ),
+                            final durationLabel = _durationMinutes < 60
+                                ? "${_durationMinutes % 60}m"
+                                : "${_durationMinutes ~/ 60}h ${_durationMinutes % 60}m";
 
-                      SizedBox(height: 20),
-                      Text(
-                        "Expires at: ${DateFormat('dd/MM - HH:mm').format(end)}",
-                        style: TextStyle(fontSize: 14),
-                      ),
+                            final chip = Chip(
+                              label: Text(
+                                durationLabel,
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                              shape: StadiumBorder(side: BorderSide(color: Theme.of(context).primaryColor)),
+                            );
+
+                            if (screenWidth >= 600) {
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  OutlinedButton(onPressed: () => _changeDuration(-60), child: Text("-1h")),
+                                  SizedBox(width: 8),
+                                  OutlinedButton(onPressed: () => _changeDuration(-10), child: Text("-10m")),
+                                  SizedBox(width: 16),
+                                  chip,
+                                  SizedBox(width: 16),
+                                  OutlinedButton(onPressed: () => _changeDuration(10), child: Text("+10m")),
+                                  SizedBox(width: 8),
+                                  OutlinedButton(onPressed: () => _changeDuration(60), child: Text("+1h")),
+                                ],
+                              );
+                            } else {
+                              return Column(
+                                children: [
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: [
+                                      OutlinedButton(onPressed: () => _changeDuration(-60), child: Text("-1h")),
+                                      OutlinedButton(onPressed: () => _changeDuration(-10), child: Text("-10m")),
+                                    ],
+                                  ),
+                                  SizedBox(height: 12),
+                                  chip,
+                                  SizedBox(height: 12),
+                                  Wrap(
+                                    alignment: WrapAlignment.center,
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: [
+                                      OutlinedButton(onPressed: () => _changeDuration(10), child: Text("+10m")),
+                                      OutlinedButton(onPressed: () => _changeDuration(60), child: Text("+1h")),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
                       SizedBox(height: 10),
+                      Text(
+                        "Expires at: ${DateFormat('dd/MM – HH:mm').format(end)}",
+                        style: TextStyle(fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
