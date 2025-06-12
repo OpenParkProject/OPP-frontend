@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'totem_install.dart';
-import 'package:dio/dio.dart';
-import '../API/client.dart';
 
 class TotemOtpPage extends StatefulWidget {
   const TotemOtpPage({super.key});
@@ -13,7 +11,7 @@ class TotemOtpPage extends StatefulWidget {
 class _TotemOtpPageState extends State<TotemOtpPage> {
   final TextEditingController _otpController = TextEditingController();
 
-  void _submitOtp() async {
+  void _submitOtp() {
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -22,33 +20,16 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
       return;
     }
 
-    try {
-      final dio = DioClient().dio;
-
-      final response = await dio.post(
-        '/otp/validate',
-        data: {'otp': otp},
-      );
-
-      // Se la validazione va a buon fine, procedi
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TotemInstallPage(
-            enabledZones: const [], // <-- puoi fare una nuova GET se servono zone dopo
-            otp: otp,
-          ),
+    // Bypassa ogni verifica e passa direttamente alla pagina di installazione
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TotemInstallPage(
+          enabledZones: const [],  // potrai fare una GET nella pagina successiva
+          otp: otp,
         ),
-      );
-    } catch (e) {
-      String errorMessage = "OTP verification failed.";
-      if (e is DioError && e.response != null) {
-        errorMessage += " (${e.response?.statusCode})";
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
-    }
+      ),
+    );
   }
 
   @override

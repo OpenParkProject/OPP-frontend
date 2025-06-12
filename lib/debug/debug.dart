@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:openpark/config.dart';
-import 'package:openpark/installer/install_totem.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../API/client.dart';
 
@@ -20,15 +19,6 @@ class DebugRoleSelector extends StatelessWidget {
     globalRole = role; // Set the global role for the app
     
     try {
-
-      if (role == 'installer') {
-        // Navigate to the installer setup page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const InstallTotemPage()),
-        );
-        return;
-      }
 
       // Else, handle other roles (driver, controller, admin)
 

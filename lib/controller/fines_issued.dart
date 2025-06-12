@@ -61,7 +61,7 @@ class _FinesIssuedPageState extends State<FinesIssuedPage> {
             if (dateStr != null) {
               final parsed = DateTime.tryParse(dateStr);
               if (parsed != null &&
-                  (plate.isNotEmpty || DateFormat('yyyy-MM-dd').format(parsed.toLocal()) == targetDate)) {
+                  (plate.isNotEmpty || DateFormat('yyyy-MM-dd').format(parsed) == targetDate)) {
                 allFines.add(m);
               }
             }

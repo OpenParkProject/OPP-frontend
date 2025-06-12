@@ -291,138 +291,87 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: userLat == null || userLong == null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "Determining your position to find nearby parking zones...",
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : isLoading
-              ? Center(child: CircularProgressIndicator())
-              : errorMessage != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.info_outline, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text(
-                            "You haven't created any zones yet.",
-                            style: TextStyle(fontSize: 18, color: Colors.grey),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _addZone,
-                            icon: Icon(Icons.add_location_alt_rounded),
-                            label: Text("Create your first zone"),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                              textStyle: TextStyle(fontSize: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-              : Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
-                          Text("$userLat, $userLong\n"),
-                          Text("Available zones (nearest first):",
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          SizedBox(height: 10),
-                          Expanded(
-                            child: ListView.builder(
-                              itemCount: zonesWithDistance.length,
-                              itemBuilder: (context, index) {
-                                final zone = zonesWithDistance[index]['zone'] as ParkingZone;
-                                final distance = zonesWithDistance[index]['distance'] as double;
-                                return Card(
-                                  elevation: 2,
-                                  margin: EdgeInsets.symmetric(vertical: 6),
-                                  child: ListTile(
-                                    title: Text(zone.name),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text("• Price: €${zone.hourlyRate.toStringAsFixed(2)}/hr \n• Distance: ${(distance / 1000).toStringAsFixed(2)} km\n• Zone ID: ${zone.id}"),
-                                        Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
-                                            style: TextStyle(fontSize: 12)),
-                                        if (zone.metadata['special_rules'] != null)
-                                          Text("Note: ${zone.metadata['special_rules']}",
-                                              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
-                                      ],
-                                    ),
-                                    trailing: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
+
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    body: userLat == null || userLong == null
+        ? Center(child: CircularProgressIndicator())
+        : isLoading
+            ? Center(child: CircularProgressIndicator())
+            : errorMessage != null
+                ? Center(child: Text(errorMessage!))
+                : Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("$userLat, $userLong\n"),
+                        Text("Available zones (nearest first):",
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 10),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: zonesWithDistance.length,
+                            itemBuilder: (context, index) {
+                              final zone = zonesWithDistance[index]['zone'] as ParkingZone;
+                              final distance = zonesWithDistance[index]['distance'] as double;
+
+                              return Card(
+                                elevation: 2,
+                                margin: EdgeInsets.symmetric(vertical: 6),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final isSmall = constraints.maxWidth < 450;
+
+                                      final buttons = [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => ZoneMapPage(zone: zone),
+                                              ),
+                                            );
+                                          },
+                                          child: Text("See on map"),
+                                        ),
+                                        IconButton(
+                                          icon: Icon(Icons.delete, color: Colors.red),
+                                          tooltip: 'Delete zone',
+                                          onPressed: () async {
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                title: Text('Delete Zone'),
+                                                content: Text('Are you sure you want to delete "${zone.name}"?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, false),
+                                                    child: Text('Cancel'),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context, true),
+                                                    child: Text('Delete', style: TextStyle(color: Colors.red)),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                            if (confirmed == true) await _deleteZone(zone.id);
+                                          },
+                                        ),
                                         Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) => ZoneMapPage(zone: zone),
-                                                  ),
-                                                );
-                                              },
-                                              child: Text("See on map"),
-                                            ),
-                                            SizedBox(width: 16),
-                                            IconButton(
-                                              icon: Icon(Icons.delete, color: Colors.red),
-                                              tooltip: 'Delete zone',
-                                              onPressed: () async {
-                                                final confirmed = await showDialog<bool>(
-                                                  context: context,
-                                                  builder: (context) => AlertDialog(
-                                                    title: Text('Delete Zone'),
-                                                    content: Text('Are you sure you want to delete "${zone.name}"?'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, false),
-                                                        child: Text('Cancel'),
-                                                      ),
-                                                      TextButton(
-                                                        onPressed: () => Navigator.pop(context, true),
-                                                        child: Text('Delete', style: TextStyle(color: Colors.red)),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                                if (confirmed == true) {
-                                                  await _deleteZone(zone.id);
-                                                }
-                                              },
-                                            ),
-                                            SizedBox(width: 16),
                                             Switch(
                                               value: zone.available,
                                               onChanged: (_) => _toggleAvailability(zone),
                                               activeColor: Colors.green,
                                               inactiveThumbColor: Colors.red,
                                             ),
-                                            SizedBox(width: 4),
                                             Text(
                                               zone.available ? 'Active' : 'Inactive',
                                               style: TextStyle(
@@ -431,32 +380,99 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
                                               ),
                                             ),
                                           ],
-                                        )
-                                      ],
-                                    ),
+                                        ),
+                                      ];
+
+                                      if (isSmall) {
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              zone.name,
+                                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text("• Price: €${zone.hourlyRate.toStringAsFixed(2)}/hr"),
+                                            Text("• Distance: ${(distance / 1000).toStringAsFixed(2)} km"),
+                                            Text("• Zone ID: ${zone.id}"),
+                                            Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
+                                                style: TextStyle(fontSize: 12)),
+                                            if (zone.metadata['special_rules'] != null)
+                                              Text("Note: ${zone.metadata['special_rules']}",
+                                                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                                            Divider(thickness: 1, height: 24),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              children: buttons,
+                                            ),
+                                          ],
+                                        );
+                                      } else {
+                                        return Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    zone.name,
+                                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  Text("• Price: €${zone.hourlyRate.toStringAsFixed(2)}/hr"),
+                                                  Text("• Distance: ${(distance / 1000).toStringAsFixed(2)} km"),
+                                                  Text("• Zone ID: ${zone.id}"),
+                                                  Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
+                                                      style: TextStyle(fontSize: 12)),
+                                                  if (zone.metadata['special_rules'] != null)
+                                                    Text("Note: ${zone.metadata['special_rules']}",
+                                                        style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              width: 1,
+                                              height: 100,
+                                              margin: EdgeInsets.symmetric(horizontal: 12),
+                                              color: Colors.grey.shade300,
+                                            ),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              children: buttons.map((b) => Padding(
+                                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                                child: b,
+                                              )).toList(),
+                                            ),
+                                          ],
+                                        );
+                                      }
+                                    },
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: _addZone,
-                              icon: Icon(Icons.add_location_alt_rounded),
-                              label: Text("Add new zone"),
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                                textStyle: TextStyle(fontSize: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
                                 ),
+                              );
+                            },
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                        Center(
+                          child: ElevatedButton.icon(
+                            onPressed: _addZone,
+                            icon: Icon(Icons.add_location_alt_rounded),
+                            label: Text("Add new zone"),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                              textStyle: TextStyle(fontSize: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
-                          ],
-                      ),
+                        ),
+                      ],
                     ),
-    );
-  }
+                  ),
+  );
+}
 }

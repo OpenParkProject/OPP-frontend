@@ -9,7 +9,6 @@ import 'controller/controller_layout.dart';
 import 'driver/driver_layout.dart';
 import 'driver/zone_selection.dart';
 import 'API/client.dart';
-import 'installer/install_totem.dart';
 import 'installer/totem_otp.dart';
 import 'dart:io';
 import 'forgot_pw.dart';
@@ -329,13 +328,53 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       SizedBox(height: 10),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ParkingZoneSelectionPage(),
-                            ),
-                          );
+                        onPressed: () async {
+                          try {
+                            final dio = DioClient().dio;
+
+                            try {
+                              final loginResp = await dio.post('/login', data: {
+                                'username': 'guest',
+                                'password': 'guest123',
+                              });
+                              final token = loginResp.data['access_token'];
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setString('access_token', token);
+                              DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                            } on DioException catch (e) {
+                              if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+                                await dio.post('/register', data: {
+                                  "name": "Guest",
+                                  "surname": "User",
+                                  "username": "guest",
+                                  "email": "guest@openpark.app",
+                                  "password": "guest123",
+                                  "role": "driver",
+                                });
+                                final loginResp = await dio.post('/login', data: {
+                                  'username': 'guest',
+                                  'password': 'guest123',
+                                });
+                                final token = loginResp.data['access_token'];
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('access_token', token);
+                                DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                              } else {
+                                throw Exception("Guest login error: ${e.message}");
+                              }
+                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ParkingZoneSelectionPage(fromGuest: true),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Guest login failed: $e")),
+                            );
+                          }
                         },
                         icon: Icon(Icons.local_parking_outlined),
                         style: ElevatedButton.styleFrom(

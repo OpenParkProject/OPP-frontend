@@ -7,6 +7,7 @@ import '../API/client.dart';
 import 'plate_input.dart';
 import 'my_cars.dart';
 import 'create_ticket.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ParkingZone {
   final String name;
@@ -121,6 +122,10 @@ class ParkingZone {
 }
 
 class ParkingZoneSelectionPage extends StatefulWidget {
+  final bool fromGuest;
+
+  const ParkingZoneSelectionPage({this.fromGuest = false, super.key});
+
   @override
   State<ParkingZoneSelectionPage> createState() => _ParkingZoneSelectionPageState();
 }
@@ -243,118 +248,129 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Select Parking Zone')),
-      body: isLoading
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    "Determining your position to find nearby parking zones...",
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            )
-          : errorMessage != null
-              ? Center(child: Text(errorMessage!))
-              : Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text("$userLat, $userLong\n"),
-                      Text("Available zones (nearest first):", style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 10),
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: zonesWithDistance.length,
-                          itemBuilder: (context, index) {
-                            final zone = zonesWithDistance[index]['zone'] as ParkingZone;
-                            final distance = zonesWithDistance[index]['distance'] as double;
-                            return ListTile(
-                              title: Text("${zone.id} - ${zone.name}"),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
-                                  if (zone.metadata['max_hours'] != null)
-                                    Text("Max hours: ${zone.metadata['max_hours']}", style: TextStyle(fontSize: 12)),
-                                ],
-                              ),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: zone.available ? Colors.green : Colors.grey,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      zone.available ? 'Available' : 'Unavailable',
-                                      style: TextStyle(color: Colors.white, fontSize: 12),
-                                    ),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_forward_ios, color: zone.available ? null : Colors.grey),
-                                ],
-                              ),
-                              enabled: zone.available,
-                              onTap: zone.available
-                                  ? () async {
-                                      try {
-                                        await DioClient().setAuthToken();
-                                        final dio = DioClient().dio;
-                                        final response = await dio.get("/users/me");
-                                        final username = response.data['username'];
-
-                                        if (username == "guest") {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => SimplePlateInputPage(selectedZone: zone),
-                                            ),
-                                          );
-                                        } else {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => MyCarsPage(
-                                              onPlateSelected: (plate) {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (_) => SelectDurationPage(
-                                                      plate: plate,
-                                                      selectedZone: zone,
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                          ),
-                                        ));
-                                      }
-                                      } catch (e) {
-                                        debugPrint("Error fetching user: $e");
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text("Unable to determine user identity.")),
-                                        );
-                                      }
-                                    }
-                                  : null,
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+    return WillPopScope(
+      onWillPop: () async {
+        if (widget.fromGuest) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('access_token');
+          DioClient().clearAuthToken();
+        }
+        return true; // consente effettivamente il pop
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text('Select Parking Zone')),
+        body: isLoading
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      "Determining your position to find nearby parking zones...",
+                      style: TextStyle(fontSize: 16),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
+              )
+            : errorMessage != null
+                ? Center(child: Text(errorMessage!))
+                : Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text("$userLat, $userLong\n"),
+                        Text("Available zones (nearest first):", style: TextStyle(fontWeight: FontWeight.bold)),
+                        SizedBox(height: 10),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: zonesWithDistance.length,
+                            itemBuilder: (context, index) {
+                              final zone = zonesWithDistance[index]['zone'] as ParkingZone;
+                              final distance = zonesWithDistance[index]['distance'] as double;
+                              return ListTile(
+                                title: Text("${zone.id} - ${zone.name}"),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
+                                    if (zone.metadata['max_hours'] != null)
+                                      Text("Max hours: ${zone.metadata['max_hours']}", style: TextStyle(fontSize: 12)),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: zone.available ? Colors.green : Colors.grey,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        zone.available ? 'Available' : 'Unavailable',
+                                        style: TextStyle(color: Colors.white, fontSize: 12),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Icon(Icons.arrow_forward_ios, color: zone.available ? null : Colors.grey),
+                                  ],
+                                ),
+                                enabled: zone.available,
+                                onTap: zone.available
+                                    ? () async {
+                                        try {
+                                          await DioClient().setAuthToken();
+                                          final dio = DioClient().dio;
+                                          final response = await dio.get("/users/me");
+                                          final username = response.data['username'];
+
+                                          if (username == "guest") {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => SimplePlateInputPage(selectedZone: zone),
+                                              ),
+                                            );
+                                          } else {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => MyCarsPage(
+                                                  onPlateSelected: (plate) {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (_) => SelectDurationPage(
+                                                          plate: plate,
+                                                          selectedZone: zone,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          debugPrint("Error fetching user: $e");
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text("Unable to determine user identity.")),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+      ),
     );
   }
 }

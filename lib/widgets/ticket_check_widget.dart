@@ -197,162 +197,109 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
   }
 
 @override
-  Widget build(BuildContext context) {
-    final plate = widget.plate;
+Widget build(BuildContext context) {
+  final plate = widget.plate;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (_loading) const LinearProgressIndicator(),
-        const SizedBox(height: 10),
-        if (_errorMessage != null)
-          Text(_errorMessage!, style: const TextStyle(color: Colors.red))
-        else ...[
-          if (activeTickets.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red),
-              ),
-              child: const Row(
+  return Expanded( // o direttamente un widget contenitore, se sei in una pagina principale
+    child: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_loading) const LinearProgressIndicator(),
+            const SizedBox(height: 10),
+            if (_errorMessage != null)
+              Text(_errorMessage!, style: const TextStyle(color: Colors.red))
+            else ...[
+              if (activeTickets.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.red),
+                      SizedBox(width: 8),
+                      Expanded(child: Text("❌ No valid parking ticket found for this plate."))
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Row(
                 children: [
-                  Icon(Icons.warning, color: Colors.red),
-                  SizedBox(width: 8),
-                  Expanded(child: Text("❌ No valid parking ticket found for this plate."))
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.gavel),
+                      label: const Text("Issue Fine"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/issue_fine', arguments: plate);
+                      },
+                    ),
+                  ),
                 ],
               ),
-            ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              // Expanded(
-              //   child: ElevatedButton.icon(
-              //     icon: const Icon(Icons.edit_location_alt),
-              //     label: const Text("Chalk Vehicle"),
-              //     style: ElevatedButton.styleFrom(
-              //       backgroundColor: Colors.orange[600],
-              //       foregroundColor: Colors.white,
-              //       padding: const EdgeInsets.symmetric(vertical: 14),
-              //       textStyle: const TextStyle(fontSize: 16),
-              //     ),
-              //     onPressed: () {
-              //       final reasonController = TextEditingController();
-              //       final notesController = TextEditingController();
-              //       showDialog(
-              //         context: context,
-              //         builder: (_) => AlertDialog(
-              //           title: Text("Chalk vehicle $plate"),
-              //           content: Column(
-              //             mainAxisSize: MainAxisSize.min,
-              //             children: [
-              //               TextField(controller: reasonController, decoration: const InputDecoration(labelText: "Reason (optional)")),
-              //               TextField(controller: notesController, decoration: const InputDecoration(labelText: "Notes (optional)")),
-              //             ],
-              //           ),
-              //           actions: [
-              //             TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-              //             ElevatedButton(
-              //               onPressed: () async {
-              //                 try {
-              //                   await DioClient().dio.post('/api/v1/chalk', data: {
-              //                     'plate': plate,
-              //                     'controller_username': widget.username,
-              //                     'reason': reasonController.text,
-              //                     'notes': notesController.text,
-              //                   });
-              //                   if (!mounted) return;
-              //                   Navigator.pop(context);
-              //                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vehicle successfully chalked")));
-              //                 } catch (e) {
-              //                   if (!mounted) return;
-              //                   Navigator.pop(context);
-              //                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error chalking vehicle: ${e.toString()}")));
-              //                 }
-              //               },
-              //               child: const Text("Confirm Chalk"),
-              //             ),
-              //           ],
-              //         ),
-              //       );
-              //     },
-              //   ),
-              // ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton.icon(
-                  icon: const Icon(Icons.gavel),
-                  label: const Text("Issue Fine"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/issue_fine', arguments: plate);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (activeTickets.isNotEmpty) ...[
-            const Text("Active Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ...activeTickets.map((t) => _buildTicketCard(t, active: true)),
-            const Divider(),
-          ],
-          if (recentExpiredTickets.isNotEmpty) ...[
-            const Text("Recently Expired Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ...recentExpiredTickets.map((t) => _buildTicketCard(t, expired: true)),
-            const Divider(),
-          ],
-          ExpansionTile(
-            title: const Text("Ticket History"),
-            initiallyExpanded: _showHistory,
-            onExpansionChanged: (expanded) => setState(() => _showHistory = expanded),
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => _selectDate(context),
-                      child: const Text("Select date"),
+              const SizedBox(height: 16),
+              if (activeTickets.isNotEmpty) ...[
+                const Text("Active Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...activeTickets.map((t) => _buildTicketCard(t, active: true)),
+                const Divider(),
+              ],
+              if (recentExpiredTickets.isNotEmpty) ...[
+                const Text("Recently Expired Tickets", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...recentExpiredTickets.map((t) => _buildTicketCard(t, expired: true)),
+                const Divider(),
+              ],
+              ExpansionTile(
+                title: const Text("Ticket History"),
+                initiallyExpanded: _showHistory,
+                onExpansionChanged: (expanded) => setState(() => _showHistory = expanded),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => _selectDate(context),
+                          child: const Text("Select date"),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(_selectedDate != null
+                            ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+                            : "No date selected"),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Text(_selectedDate != null
-                        ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
-                        : "No date selected"),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 400,
-                child: filteredHistory.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text("No tickets found for the selected date."),
-                      )
-                    : ListView.builder(
-                        itemCount: filteredHistory.length,
-                        itemBuilder: (context, index) {
-                          final t = filteredHistory[index];
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: _buildTicketCard(t),
-                          );
-                        },
-                      ),
+                  ),
+                  const SizedBox(height: 10),
+                  if (filteredHistory.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text("No tickets found for the selected date."),
+                    )
+                  else
+                    ...filteredHistory.map((t) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          child: _buildTicketCard(t),
+                        )),
+                ],
               ),
             ],
-          ),
-        ],
-      ],
-    );
-  }
+          ],
+        ),
+      ),
+    ),
+  );
+}
 }

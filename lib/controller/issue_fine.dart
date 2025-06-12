@@ -93,7 +93,7 @@ class _IssueFinePageState extends State<IssueFinePage> {
           ),
         );
 
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(seconds: 1));
         if (context.mounted) Navigator.pop(context);
       } else {
         setState(() {

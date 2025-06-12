@@ -70,7 +70,7 @@ class ParkingPaymentPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Checkout"),
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: allowPayLater,
       ),
       body: Center(
         child: Padding(
@@ -95,48 +95,62 @@ class ParkingPaymentPage extends StatelessWidget {
                 SizedBox(height: 30),
                 
                 // Payment options section
-                Text("Choose payment method:", 
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                SizedBox(height: 15),
-                
-                // Totem card payment button
-                if (isTotem)
-                ElevatedButton.icon(
-                  onPressed: () => _payTicket(context, "card"),
-                  icon: Icon(Icons.credit_card),
-                  label: Text("Pay with Card"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 48),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 12),
-                
-                if (!isTotem) ...[
-                  // PayPal payment button
-                  ElevatedButton.icon(
-                    onPressed: () => _payTicket(context, "PayPal"),
-                    icon: Icon(Icons.payment),
-                    label: Text("Pay with PayPal"),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 48),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+                GridView.count(
+                  shrinkWrap: true,
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 4.5,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _payTicket(context, "Card"),
+                      icon: Icon(Icons.credit_card),
+                      label: Text("Card"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 12),
-                ],
+                    ElevatedButton.icon(
+                      onPressed: () => _payTicket(context, "Google Pay"),
+                      icon: Icon(Icons.android),
+                      label: Text("Google Pay"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _payTicket(context, "Apple Pay"),
+                      icon: Icon(Icons.apple),
+                      label: Text("Apple Pay"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => _payTicket(context, "Satispay"),
+                      icon: Icon(Icons.qr_code),
+                      label: Text("Satispay"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+
+                SizedBox(height: 15),
                 OutlinedButton.icon(
                   onPressed: () {
                     if (allowPayLater) {
-                      // Pay later → torna semplicemente indietro
                       Navigator.popUntil(context, (route) => route.isFirst);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("💤 You can pay this ticket later."),
+                        content: Text("💤 Ticket created but not paid yet! Remember to pay it to make it valid."),
                       ));
                     } else {
-                      // Cancel ticket → cancella davvero
                       _skipPayment(context);
                     }
                   },

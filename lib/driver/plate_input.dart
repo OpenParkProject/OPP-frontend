@@ -18,47 +18,6 @@ class _SimplePlateInputPageState extends State<SimplePlateInputPage> {
   final TextEditingController _plateController = TextEditingController();
   String? _error;
 
-  Future<void> loginOrRegisterGuest() async {
-    final dio = DioClient().dio;
-
-    try {
-      // 1. Prova login
-      final response = await dio.post('/login', data: {
-        'username': 'guest',
-        'password': 'guest123',
-      });
-
-      final token = response.data['access_token'];
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('access_token', token);
-      DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        // 2. Utente non esistente → registrazione
-        final registerResp = await dio.post('/register', data: {
-          "name": "Guest",
-          "surname": "User",
-          "username": "guest",
-          "email": "guest@openpark.app",
-          "password": "guest123",
-          "role": "driver",
-        });
-
-        final loginResp = await dio.post('/login', data: {
-          'username': 'guest',
-          'password': 'guest123',
-        });
-
-        final token = loginResp.data['access_token'];
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('access_token', token);
-        DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
-      } else {
-        throw Exception("Login error: ${e.response?.data ?? e.message}");
-      }
-    }
-  }
-
   void _confirmPlate() async {
     final plate = _plateController.text.trim().toUpperCase();
     if (plate.isEmpty || plate.length < 5) {
@@ -73,9 +32,6 @@ class _SimplePlateInputPageState extends State<SimplePlateInputPage> {
       barrierDismissible: false,
       builder: (_) => Center(child: CircularProgressIndicator()),
     );
-
-    try {
-      await loginOrRegisterGuest();
 
       try {
         await DioClient().dio.post("/users/me/cars", data: {
@@ -98,11 +54,7 @@ class _SimplePlateInputPageState extends State<SimplePlateInputPage> {
           ),
         ),
       );
-    } catch (e) {
-      Navigator.pop(context);
-      setState(() => _error = "❌ Login or registration failed.");
     }
-  }
 
   @override
   Widget build(BuildContext context) {
