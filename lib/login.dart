@@ -209,11 +209,17 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 170),
+    Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(top: 170),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double width = constraints.maxWidth;
+
+            return Container(
+              width: width < 600 ? width * 0.9 : width * 2 / 3,
               child: Card(
-                color: Colors.white.withAlpha((0.9*255).round()),
+                color: Colors.white.withAlpha((0.9 * 255).round()),
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -376,7 +382,6 @@ class _LoginPageState extends State<LoginPage> {
                             );
                           }
                         },
-                        icon: Icon(Icons.local_parking_outlined),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -385,18 +390,31 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        label: Text(
-                          "Pay with plate (without login/registration)",
+                        label: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.directions_car),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                "Pay with plate (without login/registration)",
+                                textAlign: TextAlign.center,
+                              )
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    );
-  }
+    ),
+  ],
+),
+);
+}
 }

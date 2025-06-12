@@ -224,7 +224,7 @@ Widget build(BuildContext context) {
                     children: [
                       Icon(Icons.warning, color: Colors.red),
                       SizedBox(width: 8),
-                      Expanded(child: Text("❌ No valid parking ticket found for this plate."))
+                      Expanded(child: Text("❌ No valid parking ticket found for this plate in your zones."))
                     ],
                   ),
                 ),

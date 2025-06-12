@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:openpark/config.dart';
 import '../API/client.dart';
 import 'package:dio/dio.dart';
+import 'dart:io' show Platform;
+import 'card_payment.dart';
+import 'manual_card_form.dart';
+
+const bool debugCard = false;
 
 class ParkingPaymentPage extends StatelessWidget {
   final int ticketId;
@@ -21,6 +25,28 @@ class ParkingPaymentPage extends StatelessWidget {
     this.allowPayLater = true,
     super.key,
   });
+
+  Widget _buildPaymentButton(BuildContext context, String label, IconData icon, Color color, String method) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        if (method == "Card") {
+          final page = Platform.isLinux || debugCard
+              ? CardPaymentPage(onConfirmed: () => _payTicket(context, method))
+              : ManualCardFormPage(onConfirmed: () => _payTicket(context, method));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+        } else {
+          _payTicket(context, method);
+        }
+      },
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   Future<void> _payTicket(BuildContext context, String paymentMethod) async {
     try {
@@ -70,7 +96,7 @@ class ParkingPaymentPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Checkout"),
-        automaticallyImplyLeading: allowPayLater,
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: Padding(
@@ -95,51 +121,41 @@ class ParkingPaymentPage extends StatelessWidget {
                 SizedBox(height: 30),
                 
                 // Payment options section
-                GridView.count(
-                  shrinkWrap: true,
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 4.5,
-                  physics: NeverScrollableScrollPhysics(),
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () => _payTicket(context, "Card"),
-                      icon: Icon(Icons.credit_card),
-                      label: Text("Card"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _payTicket(context, "Google Pay"),
-                      icon: Icon(Icons.android),
-                      label: Text("Google Pay"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _payTicket(context, "Apple Pay"),
-                      icon: Icon(Icons.apple),
-                      label: Text("Apple Pay"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () => _payTicket(context, "Satispay"),
-                      icon: Icon(Icons.qr_code),
-                      label: Text("Satispay"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+                Text("Choose your payment method: "),
+                SizedBox(height: 5),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWideScreen = constraints.maxWidth > 600;
+                    final buttonWidth = isWideScreen ? 180.0 : double.infinity;
+                    final spacing = isWideScreen ? 12.0 : 8.0;
+
+                    final buttons = [
+                      _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+                      _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
+                      _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
+                      _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
+                    ];
+
+                    if (isWideScreen) {
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        alignment: WrapAlignment.center,
+                        children: buttons
+                            .map((b) => SizedBox(width: buttonWidth, height: 48, child: b))
+                            .toList(),
+                      );
+                    } else {
+                      return Column(
+                        children: buttons
+                            .map((b) => Padding(
+                                  padding: EdgeInsets.symmetric(vertical: spacing / 2),
+                                  child: SizedBox(width: double.infinity, height: 48, child: b),
+                                ))
+                            .toList(),
+                      );
+                    }
+                  },
                 ),
 
                 SizedBox(height: 15),

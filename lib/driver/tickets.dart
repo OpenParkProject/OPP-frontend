@@ -25,6 +25,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
   List<Map<String, dynamic>> scheduledPaid = [];
   List<Map<String, dynamic>> scheduledUnpaid = [];
   List<Map<String, dynamic>> expiredTickets = [];
+  List<Map<String, dynamic>> allTickets = [];
   List<Map<String, dynamic>> mergeTickets(List<Map<String, dynamic>> tickets) {
     tickets.sort((a, b) {
       final sa = DateTime.tryParse(a['start_date'] ?? '') ?? DateTime(2100);
@@ -32,71 +33,59 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
       return sa.compareTo(sb);
     });
 
-    List<List<Map<String, dynamic>>> groups = [];
-    List<Map<String, dynamic>> currentGroup = [];
+    List<Map<String, dynamic>> result = [];
+    int i = 0;
 
-    for (var ticket in tickets) {
-      final start = DateTime.tryParse(ticket['start_date'] ?? '');
-      final end = DateTime.tryParse(ticket['end_date'] ?? '');
-      if (start == null || end == null) continue;
+    while (i < tickets.length) {
+      final current = tickets[i];
+      final currentEnd = DateTime.tryParse(current['end_date'] ?? '')?.toUtc();
 
-      if (currentGroup.isEmpty) {
-        currentGroup.add(ticket);
-      } else {
-        final last = currentGroup.last;
-        final lastEnd = DateTime.tryParse(last['end_date'] ?? '');
-        if (ticket['plate'] == last['plate'] &&
-            ticket['zone_id'] == last['zone_id'] &&
-            lastEnd != null &&
-            start == lastEnd) {
-          currentGroup.add(ticket);
-        } else {
-          groups.add(List.from(currentGroup));
-          currentGroup = [ticket];
+      if (i + 1 < tickets.length) {
+        final next = tickets[i + 1];
+        final nextStart = DateTime.tryParse(next['start_date'] ?? '')?.toUtc();
+
+        final samePlate = current['plate'] == next['plate'];
+        final sameZone = current['zone_id'] == next['zone_id'];
+        final contiguous = currentEnd != null && nextStart != null &&
+            (nextStart.difference(currentEnd).inSeconds).abs() <= 1;
+
+        if (samePlate && sameZone && contiguous) {
+          final price1 = (current['price'] is num) ? current['price'].toDouble() : double.tryParse('${current['price']}') ?? 0.0;
+          final price2 = (next['price'] is num) ? next['price'].toDouble() : double.tryParse('${next['price']}') ?? 0.0;
+
+          result.add({
+            ...current,
+            'start_date': current['start_date'],
+            'end_date': next['end_date'],
+            'price': price1 + price2,
+            'extended': true,
+            'merged_ids': [current['id'], next['id']],
+          });
+
+          i += 2; // Salta la coppia
+          continue;
         }
       }
+
+      result.add(current);
+      i++;
     }
-    if (currentGroup.isNotEmpty) groups.add(currentGroup);
 
-    return groups.map((g) {
-      if (g.length == 1) return g.first;
-      final price = g.fold<double>(0, (sum, t) {
-        final p = t['price'];
-        if (p is num) return sum + p.toDouble();
-        if (p is String) return sum + (double.tryParse(p) ?? 0.0);
-        return sum;
-      });
-
-      return {
-        ...g.first,
-        'start_date': g.first['start_date'],
-        'end_date': g.last['end_date'],
-        'price': price,
-        'extended': true,
-        'merged_ids': g.map((t) => t['id']).toList(),
-      };
-    }).toList();
+    return result;
   }
+
 
   bool loading = true;
   String? errorMsg;
   bool showExpired = false;
 
-      Map<String, dynamic>? findSubTicket(int subId) {
-      try {
-        return activeTickets.firstWhere((t) => t['id'] == subId);
-      } catch (_) {
-        try {
-          return expiredTickets.firstWhere((t) => t['id'] == subId);
-        } catch (_) {
-          try {
-            return scheduledPaid.firstWhere((t) => t['id'] == subId);
-          } catch (_) {
-            return null;
-          }
-        }
-      }
+  Map<String, dynamic>? findSubTicket(int subId) {
+    try {
+      return allTickets.firstWhere((t) => t['id'] == subId);
+    } catch (_) {
+      return null;
     }
+  }
 
   @override
   void initState() {
@@ -141,12 +130,19 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
       final response = await DioClient().dio.get('/users/me/tickets');
       final now = DateTime.now();
 
+      allTickets = List<Map<String, dynamic>>.from(response.data);
       List<Map<String, dynamic>> toMerge = [];
+
+      scheduledUnpaid = []; // reset
+
       for (var t in response.data) {
         final rawStart = DateTime.tryParse(t['start_date'] ?? '');
         final rawEnd = DateTime.tryParse(t['end_date'] ?? '');
         final start = rawStart?.toLocal();
         final end = rawEnd?.toLocal();
+        if (start != null) t['start_date'] = start.toIso8601String();
+        if (end != null) t['end_date'] = end.toIso8601String();
+
         final paid = t['paid'] == true;
 
         if (start == null || end == null) continue;
@@ -158,6 +154,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
         }
       }
 
+      // ✅ Fonde i ticket consecutivi pagati con stessa targa e zona
       final mergedTickets = mergeTickets(toMerge);
       activeTickets = [];
       scheduledPaid = [];
@@ -170,7 +167,8 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
 
         if (end.isBefore(now)) {
           expiredTickets.add(t);
-        } else if (now.isAfter(start.subtract(Duration(minutes: 1))) && now.isBefore(end.add(Duration(minutes: 1)))) {
+        } else if (now.isAfter(start.subtract(Duration(minutes: 1))) &&
+                  now.isBefore(end.add(Duration(minutes: 1)))) {
           activeTickets.add(t);
         } else {
           scheduledPaid.add(t);
@@ -393,23 +391,26 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.link, size: 18, color: Colors.blue),
-                    SizedBox(width: 8),
-                    Text("Extended ticket", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                    Spacer(),
+                    const Icon(Icons.link, size: 18, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Extended ticket",
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                    const Spacer(),
+                    // Mostra l’orario di fine del ticket precedente
                     if (ticket['merged_ids'] != null && ticket['merged_ids'].length >= 2)
                       Builder(builder: (_) {
-                        final subTickets = ticket['merged_ids'];
-                        final endOfFirst = ticket['start_date'];
-                        final firstEndTime = DateTime.tryParse(endOfFirst)?.add(
-                          Duration(minutes: ticket['duration'] ?? 0),
-                        );
-                        return firstEndTime != null
+                        final prevId      = ticket['merged_ids'][ticket['merged_ids'].length - 2];
+                        final prevTicket  = findSubTicket(prevId);
+                        final prevEnd     = DateTime.tryParse(prevTicket?['end_date'] ?? '')?.toLocal();
+
+                        return prevEnd != null
                             ? Text(
-                                "Prev. end: ${DateFormat('HH:mm').format(firstEndTime.toLocal())}",
-                                style: TextStyle(fontSize: 13, color: Colors.blueGrey),
+                                "Prev. end: ${DateFormat('HH:mm').format(prevEnd)}",
+                                style: const TextStyle(fontSize: 13, color: Colors.blueGrey),
                               )
-                            : SizedBox.shrink();
+                            : const SizedBox.shrink();
                       }),
                   ],
                 ),
@@ -447,8 +448,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                   children: [
                     if (!isExpired && !paid)
                       ElevatedButton.icon(
-                      onPressed: () async {
-                        try {
+                        onPressed: () async {
                           await DioClient().setAuthToken();
                           await DioClient().dio.delete('/tickets/$id');
 
@@ -457,10 +457,9 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                           });
 
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("🗑️ Ticket deleted.")));
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("❌ Deletion failed.")));
-                        }
-                      },
+
+                          _fetchTickets();
+                        },
                       icon: Icon(Icons.delete, size: 18),
                       label: Text("Delete"),
                       style: ElevatedButton.styleFrom(
@@ -501,31 +500,40 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                       ),
                     ),
                     if (!isExpired && paid && start != null && end != null)
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ExtendTicketPage(
-                                ticketId: id,
-                                plate: plate,
-                                oldStart: start,
-                                oldEnd: end,
-                                oldPrice: price,
-                                zoneId: ticket['zone_id'],
+                      if (ticket['merged_ids'] != null && ticket['merged_ids'].length > 1)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                          ],
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ExtendTicketPage(
+                                  ticketId: id,
+                                  plate: plate,
+                                  oldStart: start,
+                                  oldEnd: end,
+                                  oldPrice: price,
+                                  zoneId: ticket['zone_id'],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.schedule_send),
-                        label: Text("Extend"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade100,
-                          foregroundColor: Colors.black87,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            );
+                            await Future.delayed(Duration(seconds: 1));
+                            await _fetchTickets();
+                          },
+                          icon: Icon(Icons.schedule_send),
+                          label: Text("Extend"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade100,
+                            foregroundColor: Colors.black87,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
                 ),
               ),
           ],

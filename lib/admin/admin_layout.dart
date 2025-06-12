@@ -3,6 +3,7 @@ import 'package:openpark/admin/controller_management.dart';
 import 'package:openpark/admin/otp.dart';
 import 'package:openpark/admin/totem_map.dart';
 import 'package:openpark/admin/zone_status.dart';
+import 'package:openpark/admin/admins_management.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../login.dart';
@@ -21,6 +22,7 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   final List<String> _titles = [
     "Controllers",
+    "Admins",
     "OTP",
     "Totems",
     "Zones",
@@ -28,6 +30,7 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   final List<Widget> _pages = [
     ControllerManagementPage(),
+    AdminAdminManagementPage(),
     OTPPage(),
     TotemMapAdminPage(),
     ParkingZoneStatusPage(),
@@ -35,6 +38,7 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   final List<Icon> _icons = [
     Icon(Icons.shield),
+    Icon(Icons.manage_accounts),
     Icon(Icons.numbers),
     Icon(Icons.location_on),       
     Icon(Icons.map),

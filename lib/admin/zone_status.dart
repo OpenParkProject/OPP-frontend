@@ -242,7 +242,9 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     
     // Refresh the zones list when returning
     if (result == true) {
-      _fetchZonesAndCalculateDistances();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload(); // ⚠️ Assicura che le modifiche vengano viste subito
+      await _fetchZonesAndCalculateDistances();
     }
   }
 
