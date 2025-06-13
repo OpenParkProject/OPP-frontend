@@ -10,7 +10,6 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'login.dart';
 import 'API/client.dart';
 import 'controller/issue_fine.dart';
-import 'config.dart';
 import 'installer/totem_otp.dart';
 import 'utils/totem_config_manager.dart';
 
@@ -158,13 +157,17 @@ void main() async {
     },
   );
 
-  // Logica condizionale per il totem
+  // Carica configurazione minima
+  final config = await TotemConfigManager.loadMinimalConfig();
+  if (config['isTotem'] == true) {
+    await clearAllPrefsExceptTotem();
+  }
+  final bool isTotem = config['isTotem'] == true;
+  final bool configured = config['zoneId'] != null;
+
   Widget initialWidget;
   if (isTotem) {
-    final configured = await TotemConfigManager.isConfigured();
-    initialWidget = configured
-        ? LoginPage()
-        : const TotemOtpPage();
+    initialWidget = configured ? LoginPage() : const TotemOtpPage();
   } else {
     initialWidget = LoginPage();
   }
@@ -201,5 +204,23 @@ class ParkingApp extends StatelessWidget {
         '/issue_fine': (context) => const IssueFinePage(),
       },
     );
+  }
+}
+
+Future<void> clearAllPrefsExceptTotem() async {
+  final prefs = await SharedPreferences.getInstance();
+  final keepKeys = {
+    'isTotem',
+    'zone_id',
+    'zone_name',
+    'latitude',
+    'longitude',
+    'rfid_enabled'
+  };
+  final allKeys = prefs.getKeys();
+  for (final key in allKeys) {
+    if (!keepKeys.contains(key)) {
+      await prefs.remove(key);
+    }
   }
 }

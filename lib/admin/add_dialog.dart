@@ -86,54 +86,98 @@ class _AddEditDialogState extends State<AddEditDialog> {
       return;
     }
 
-    setState(() => loading = true);
+    setState(() {
+      loading = true;
+      error = null;
+    });
 
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final email = "$timestamp@gmail.com";
+      Map<String, dynamic>? existingUser;
+      bool userExists = false;
 
-      final data = {
-        "name": widget.role.capitalize(),
-        "surname": widget.role.capitalize(),
-        "email": email,
-        "username": username,
-        "role": widget.role,
-        if (!isEdit) "password": password,
-      };
+      // Check se l'utente esiste già
+      try {
+        final res = await dio.get("/users/$username");
+        existingUser = Map<String, dynamic>.from(res.data);
+        userExists = true;
 
-      bool userAlreadyExists = false;
-
-      if (isEdit) {
-        await dio.patch("/users/${widget.existing!['id']}", data: data);
-      } else {
-        try {
-          await dio.post("/register", data: data);
-        } on DioException catch (e) {
-          if (e.response?.statusCode == 409) {
-            userAlreadyExists = true;
-          } else {
-            rethrow;
-          }
+        if (existingUser['role'] != widget.role) {
+          setState(() {
+            error = "❌ User '$username' already exists with role '${existingUser!['role']}' "
+                    "and cannot be assigned as '${widget.role}'.";
+          });
+          await Future.delayed(Duration(seconds: 2));
+          setState(() => loading = false);
+          return;
+        }
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          userExists = false; // utente non trovato: ok, va creato
+        } else {
+          setState(() => error = "❌ Failed to check existing user.");
+          await Future.delayed(Duration(seconds: 2));
+          setState(() => loading = false);
+          return;
         }
       }
 
+      // Se non esiste, lo creiamo
+      if (!userExists) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final email = "$timestamp@gmail.com";
+        final data = {
+          "name": widget.role.capitalize(),
+          "surname": widget.role.capitalize(),
+          "email": email,
+          "username": username,
+          "role": widget.role,
+          "password": password,
+        };
+
+        try {
+          await dio.post("/register", data: data);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString("admin_pw_$username", password);
+        } on DioException catch (e) {
+          setState(() => error = "❌ Failed to create user.");
+          await Future.delayed(Duration(seconds: 2));
+          setState(() => loading = false);
+          return;
+        }
+      }
+
+      // Assegna le zone solo se non già assegnate
       if (!widget.noZoneAssignment) {
         for (final zid in zones) {
           try {
-            await dio.post("/zones/$zid/users", data: {
-              "username": username,
-              "role": widget.role,
-            });
-          } catch (_) {}
+            final res = await dio.get("/zones/$zid/users");
+            final existingUsers = List<Map<String, dynamic>>.from(res.data);
+            final alreadyAssigned = existingUsers.any(
+              (u) => u['username'].toString().toLowerCase() == username.toLowerCase(),
+            );
+
+            if (!alreadyAssigned) {
+              await dio.post("/zones/$zid/users", data: {
+                "username": username,
+                "role": widget.role,
+              });
+            }
+          } catch (e) {
+            setState(() => error = "❌ Failed to assign zone ID $zid.");
+            await Future.delayed(Duration(seconds: 2));
+            setState(() => loading = false);
+            return;
+          }
         }
       }
 
       Navigator.pop(context, true);
     } catch (e) {
-      setState(() => error = "❌ Failed to ${isEdit ? 'update' : 'create'} ${widget.role}.");
+      setState(() => error = "❌ Unexpected error.");
+      await Future.delayed(Duration(seconds: 2));
     } finally {
       setState(() => loading = false);
     }

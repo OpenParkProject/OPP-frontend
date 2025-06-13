@@ -46,7 +46,22 @@ class _AdminLayoutState extends State<AdminLayout> {
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // oppure prefs.remove("zone_ids");
+    final keepKeys = {
+      'isTotem',
+      'zone_id',
+      'zone_name',
+      'latitude',
+      'longitude',
+      'rfid_enabled'
+    };
+
+    final allKeys = prefs.getKeys();
+    for (final key in allKeys) {
+      if (!keepKeys.contains(key)) {
+        await prefs.remove(key);
+      }
+    }
+
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => LoginPage()),

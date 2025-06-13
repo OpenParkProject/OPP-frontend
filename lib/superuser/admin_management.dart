@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../API/client.dart';
 import '../admin/add_dialog.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../admin/admin_layout.dart';
 
 class SuperuserAdminManagementPage extends StatefulWidget {
   final String username;
@@ -66,19 +68,70 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
     if (created == true) _fetchAdmins();
   }
 
+  Future<void> _loginAsAdmin(String username) async {
+    final confirmed = await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("Login as $username?"),
+        content: Text("You will log out as superuser and enter the admin interface."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Login")),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedPassword = prefs.getString("admin_pw_$username");
+
+      if (savedPassword == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No saved password for $username")),
+        );
+        return;
+      }
+
+      final dio = DioClient().dio;
+      final response = await dio.post('/login', data: {
+        'username': username,
+        'password': savedPassword,
+      });
+
+      final token = response.data['access_token'];
+      await prefs.setString('access_token', token);
+      DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+
+      // Recupera le zone
+      final zonesResponse = await dio.get('/zones/me');
+      final zoneList = zonesResponse.data as List<dynamic>;
+      final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+      final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+      await prefs.setStringList('zone_ids', zoneIds);
+      await prefs.setStringList('zone_names', zoneNames);
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => AdminLayout(username: username)),
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Login as $username failed")),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Admin Users",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
           const SizedBox(height: 12),
           Expanded(
             child: loading
@@ -95,9 +148,19 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
                             child: ListTile(
                               title: Text("${admin['username']}"),
                               subtitle: Text(admin['email'] ?? ""),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAdmin(admin['id']),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.login, color: Colors.blue),
+                                    tooltip: "Login as ${admin['username']}",
+                                    onPressed: () => _loginAsAdmin(admin['username']),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteAdmin(admin['id']),
+                                  ),
+                                ],
                               ),
                             ),
                           );

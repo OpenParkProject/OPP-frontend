@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'totem_install.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
+import '../login.dart';
 
 class TotemOtpPage extends StatefulWidget {
   const TotemOtpPage({super.key});
@@ -23,12 +26,35 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
       return;
     }
 
+    if (otp == disableTotemOtp) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isTotem', false);
+      await prefs.remove('zone_id');
+      await prefs.remove('zone_name');
+      await prefs.remove('latitude');
+      await prefs.remove('longitude');
+      await prefs.remove('rfid_enabled');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Totem mode disabled. Restarting...")),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => LoginPage()),
+            (_) => false,
+          );
+        });
+      }
+      return;
+    }
+
     setState(() => _loading = true);
 
     try {
       final dio = DioClient().dio;
 
-      // Unica richiesta: ottiene zone associate all'OTP
       final zonesRes = await dio.get('/zones/me/$otp');
       final List<dynamic> zones = zonesRes.data;
 

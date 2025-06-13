@@ -6,6 +6,8 @@ import 'dart:convert';
 import '../API/client.dart';
 import 'package:dio/dio.dart';
 import 'dart:io';
+import '../utils/totem_config_manager.dart';
+import '../login.dart';
 
 class TotemInstallPage extends StatefulWidget {
   final List<Map<String, dynamic>> enabledZones;
@@ -101,8 +103,21 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
         const SnackBar(content: Text("Totem registered successfully!")),
       );
 
-      // Torna alla login
-      Navigator.popUntil(context, (route) => route.isFirst);
+      // Salva anche la configurazione locale
+      await TotemConfigManager.save(
+        zoneId: zoneId,
+        zoneName: _selectedZone!['name'],
+        latitude: _currentLocation!.latitude,
+        longitude: _currentLocation!.longitude,
+        rfidEnabled: _rfidEnabled,
+      );
+
+      // Restart login page to show totem mode
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage()),
+        (_) => false,);
+
 
     } catch (e) {
       String msg = "Installation failed.";

@@ -14,6 +14,8 @@ import 'dart:io';
 import 'forgot_pw.dart';
 import '/superuser/superuser_layout.dart';
 
+
+
 class LoginPage extends StatefulWidget {
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -37,6 +39,38 @@ class _LoginPageState extends State<LoginPage> {
         duration: Duration(seconds: 3),
       ),
     );
+  }
+
+  Map<String, dynamic>? totemInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTotemInfo();
+    _debugPrintSharedPrefs();
+  }
+
+  void _debugPrintSharedPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys();
+
+    debugPrint('------ SharedPreferences ------');
+    for (var key in allKeys) {
+      final value = prefs.get(key);
+      debugPrint('$key: $value');
+    }
+    debugPrint('-------------------------------');
+  }
+
+  void _loadTotemInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('isTotem') == true) {
+      setState(() {
+        totemInfo = {
+          'zoneName': prefs.getString('zone_name') ?? 'Unknown zone',
+        };
+      });
+    }
   }
 
   void _handleAuth() async {
@@ -236,6 +270,30 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(height: 20),
+                      if (totemInfo != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.yellow.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Icon(Icons.memory, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Running in Totem mode (${totemInfo!['zoneName']})',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
                         isSelected: [!isSignIn, isSignIn],
@@ -320,6 +378,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(isSignIn ? "Sign In" : "Create Account"),
                       ),
                       if (isSignIn)
+                        SizedBox(height: 3),
                         TextButton(
                           onPressed: () {
                             Navigator.push(

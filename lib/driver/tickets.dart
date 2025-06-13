@@ -539,20 +539,25 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
 
                           if (ticket['merged_ids'] != null && ticket['merged_ids'].isNotEmpty) {
                             final mergedIds = List<int>.from(ticket['merged_ids']);
-                            final lastTicketId = mergedIds.last;
-                            final lastTicket = findSubTicket(lastTicketId);
+                            double fullPrice = 0.0;
+                            DateTime? lastEnd;
 
-                            if (lastTicket != null) {
-                              final lastEnd = DateTime.tryParse(lastTicket['end_date'] ?? '')?.toLocal();
-                              final p = lastTicket['price'];
-                              final parsedPrice = (p is num) ? p.toDouble() : double.tryParse('$p') ?? 0.0;
+                            for (final subId in mergedIds) {
+                              final sub = findSubTicket(subId);
+                              final price = sub?['price'];
+                              if (price is num) fullPrice += price;
+                              if (price is String) fullPrice += double.tryParse(price) ?? 0.0;
 
-                              if (lastEnd != null) {
-                                newEnd = lastEnd;
-                                newPrice = parsedPrice;
-                              }
+                              final e = DateTime.tryParse(sub?['end_date'] ?? '')?.toLocal();
+                              if (e != null) lastEnd = e;
+                            }
+
+                            if (lastEnd != null) {
+                              newEnd = lastEnd;
+                              newPrice = fullPrice;
                             }
                           }
+
 
                         await Navigator.push(
                           context,
@@ -564,6 +569,9 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                               oldEnd: newEnd,
                               oldPrice: newPrice,
                               zoneId: ticket['zone_id'],
+                              priceOffset: ticket['price_offset']?.toDouble() ?? 0.0,
+                              priceLin: ticket['price_lin']?.toDouble() ?? 1.0,
+                              priceExp: ticket['price_exp']?.toDouble() ?? 1.0,
                             ),
                           ),
                         );

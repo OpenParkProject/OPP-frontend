@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'payment.dart';
@@ -11,6 +12,11 @@ class ExtendTicketPage extends StatefulWidget {
   final double oldPrice;
   final int zoneId;
 
+  // Nuovi parametri per la formula
+  final double priceOffset;
+  final double priceLin;
+  final double priceExp;
+
   const ExtendTicketPage({
     required this.ticketId,
     required this.plate,
@@ -18,6 +24,9 @@ class ExtendTicketPage extends StatefulWidget {
     required this.oldEnd,
     required this.oldPrice,
     required this.zoneId,
+    required this.priceOffset,
+    required this.priceLin,
+    required this.priceExp,
     super.key,
   });
 
@@ -27,7 +36,6 @@ class ExtendTicketPage extends StatefulWidget {
 
 class _ExtendTicketPageState extends State<ExtendTicketPage> {
   int extraMinutes = 30;
-  final double pricePerMinute = 0.02;
 
   void _changeDuration(int delta) {
     setState(() {
@@ -42,12 +50,17 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
     return m == 0 ? "${h}h" : "${h}h ${m}m";
   }
 
+  double _calculatePrice(int minutes) {
+    final t = minutes / 60.0;
+    return widget.priceOffset + pow(widget.priceLin * t, widget.priceExp);
+  }
+
   @override
   Widget build(BuildContext context) {
     final oldDuration = widget.oldEnd.difference(widget.oldStart).inMinutes;
     final newTotalDuration = oldDuration + extraMinutes;
     final newEnd = widget.oldStart.add(Duration(minutes: newTotalDuration));
-    final additionalCost = extraMinutes * pricePerMinute;
+    final additionalCost = _calculatePrice(newTotalDuration) - widget.oldPrice;
 
     return Scaffold(
       appBar: AppBar(title: Text("Extend Ticket")),
@@ -75,7 +88,6 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                   final screenWidth = MediaQuery.of(context).size.width;
 
                   if (screenWidth >= 600) {
-                    // SCHERMI LARGHI: tutto su una riga
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -98,7 +110,6 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                       ],
                     );
                   } else {
-                    // SCHERMI PICCOLI: layout verticale
                     return Column(
                       children: [
                         Wrap(
@@ -152,7 +163,8 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                 onPressed: () async {
                   final newStart = widget.oldEnd.toUtc();
                   final newDuration = extraMinutes;
-                  final cost = newDuration * pricePerMinute;
+                  final newTotal = _calculatePrice(widget.oldEnd.difference(widget.oldStart).inMinutes + newDuration);
+                  final cost = newTotal - widget.oldPrice;
 
                   try {
                     await DioClient().setAuthToken();
@@ -181,7 +193,6 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                       ),
                     );
 
-                    // Se dalla PaymentPage è tornato true (es. per cancel/delete), lo propaghiamo a UserTicketsPage
                     if (result == true) {
                       Navigator.pop(context, true);
                     }

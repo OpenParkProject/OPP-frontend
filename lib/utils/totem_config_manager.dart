@@ -1,7 +1,7 @@
-// lib/utils/totem_config_manager.dart
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TotemConfigManager {
+  static const _isTotemKey = 'isTotem';
   static const _zoneIdKey = 'zone_id';
   static const _zoneNameKey = 'zone_name';
   static const _latKey = 'latitude';
@@ -16,6 +16,8 @@ class TotemConfigManager {
     required bool rfidEnabled,
   }) async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isTotem', true);
+    await prefs.setBool(_isTotemKey, true);
     await prefs.setInt(_zoneIdKey, zoneId);
     await prefs.setString(_zoneNameKey, zoneName);
     await prefs.setDouble(_latKey, latitude);
@@ -26,6 +28,7 @@ class TotemConfigManager {
   static Future<Map<String, dynamic>> load() async {
     final prefs = await SharedPreferences.getInstance();
     return {
+      'isTotem': prefs.getBool(_isTotemKey) ?? false,
       'zone_id': prefs.getInt(_zoneIdKey),
       'zone_name': prefs.getString(_zoneNameKey),
       'latitude': prefs.getDouble(_latKey),
@@ -34,13 +37,38 @@ class TotemConfigManager {
     };
   }
 
+  static Future<Map<String, dynamic>> loadMinimalConfig() async {
+    final prefs = await SharedPreferences.getInstance();
+    return {
+      'isTotem': prefs.getBool(_isTotemKey) ?? false,
+      'zoneId': prefs.getInt(_zoneIdKey),
+      'rfidEnabled': prefs.getBool(_rfidKey) ?? false,
+    };
+  }
+
+  static Future<bool> isTotem() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isTotemKey) ?? false;
+  }
+
   static Future<bool> isConfigured() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.containsKey(_zoneIdKey);
   }
 
+  static Future<bool> isRfidEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_rfidKey) ?? false;
+  }
+
+  static Future<int?> getZoneId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_zoneIdKey);
+  }
+
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_isTotemKey);
     await prefs.remove(_zoneIdKey);
     await prefs.remove(_zoneNameKey);
     await prefs.remove(_latKey);
