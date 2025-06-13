@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../API/client.dart';
-import '../admin/add_edit_dialog.dart';
+import '../admin/add_dialog.dart';
 
 class SuperuserAdminManagementPage extends StatefulWidget {
   final String username;

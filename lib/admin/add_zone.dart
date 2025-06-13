@@ -140,6 +140,10 @@ class _AddZonePageState extends State<AddZonePage> {
         'price_exp': double.parse(_priceExpController.text),
       };
 
+      // Debug print
+      debugPrint("JSON Payload:");
+      debugPrint(const JsonEncoder.withIndent('  ').convert(zoneData));
+
       // Submit to API
       final response = await dio.post('/zones', data: zoneData);
       

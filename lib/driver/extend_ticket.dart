@@ -167,7 +167,7 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
 
                     final newTicketId = response.data['id'];
 
-                    Navigator.pushReplacement(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => ParkingPaymentPage(
@@ -180,6 +180,12 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                         ),
                       ),
                     );
+
+                    // Se dalla PaymentPage è tornato true (es. per cancel/delete), lo propaghiamo a UserTicketsPage
+                    if (result == true) {
+                      Navigator.pop(context, true);
+                    }
+
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("❌ Failed to create extension ticket")),

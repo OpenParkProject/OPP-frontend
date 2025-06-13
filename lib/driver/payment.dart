@@ -57,7 +57,8 @@ class ParkingPaymentPage extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
       );
-      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.pop(context, true);
+;
     } catch (e) {
       String msg = "❌ Payment failed.";
       if (e is DioError && e.response?.data is Map) {
@@ -72,8 +73,8 @@ class ParkingPaymentPage extends StatelessWidget {
     try {
       await DioClient().setAuthToken();
       await DioClient().dio.delete('/tickets/$ticketId');
-
-      Navigator.popUntil(context, (route) => route.isFirst);
+      
+      Navigator.pop(context, true);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("🗑️ Ticket cancelled and deleted."),
@@ -162,7 +163,7 @@ class ParkingPaymentPage extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () {
                     if (allowPayLater) {
-                      Navigator.popUntil(context, (route) => route.isFirst);
+                      Navigator.pop(context, true);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text("💤 Ticket created but not paid yet! Remember to pay it to make it valid."),
                       ));

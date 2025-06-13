@@ -192,7 +192,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
       if (ids.isEmpty) {
         setState(() {
           isLoading = false;
-          errorMessage = 'No assigned zones.';
+          errorMessage = 'No assigned/created zones.';
           zonesWithDistance = [];
         });
         return;
@@ -302,7 +302,33 @@ Widget build(BuildContext context) {
         : isLoading
             ? Center(child: CircularProgressIndicator())
             : errorMessage != null
-                ? Center(child: Text(errorMessage!))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.map_outlined, size: 72, color: Colors.grey.shade400),
+                      SizedBox(height: 16),
+                      Text(
+                        errorMessage ?? 'No zones available',
+                        style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: _addZone,
+                        icon: Icon(Icons.add_location_alt_rounded),
+                        label: Text("Add new zone"),
+                        style: ElevatedButton.styleFrom(
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                          textStyle: TextStyle(fontSize: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
                 : Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(

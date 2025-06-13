@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../API/client.dart';
-import 'add_edit_dialog.dart';
+import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ControllerManagementPage extends StatefulWidget {

@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
             await prefs.setStringList('zone_ids', zoneIds);
             await prefs.setStringList('zone_names', zoneNames);
           } catch (e) {
-            _showMessage("Failed to fetch zones for admin");
+            //_showMessage("Failed to fetch zones for admin");
           }
 
           Navigator.pushReplacement(
@@ -98,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
             await prefs.setStringList('zone_ids', zoneIds);
             await prefs.setStringList('zone_names', zoneNames);
           } catch (e) {
-            _showMessage("Failed to fetch zones for controller");
+            //_showMessage("Failed to fetch zones for controller");
           }
 
           Navigator.pushReplacement(
