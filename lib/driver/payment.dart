@@ -57,7 +57,7 @@ class ParkingPaymentPage extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
       );
-      Navigator.pop(context, true);
+      Navigator.popUntil(context, (route) => route.isFirst);
 ;
     } catch (e) {
       String msg = "❌ Payment failed.";

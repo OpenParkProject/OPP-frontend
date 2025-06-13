@@ -69,10 +69,10 @@ class _IssueFinePageState extends State<IssueFinePage> {
       _successMessage = null;
     });
 
-    try {
-      final dio = DioClient().dio;
-      final zid = selectedZone!['id'];
+    final dio = DioClient().dio;
+    final zid = selectedZone!['id'];
 
+    Future<void> _issueFine() async {
       final response = await dio.post('/zones/$zid/fines', data: {
         "plate": plate,
         "amount": amount,
@@ -100,10 +100,34 @@ class _IssueFinePageState extends State<IssueFinePage> {
           _errorMessage = "Unexpected response: ${response.statusCode}";
         });
       }
-    } catch (e) {
-      setState(() {
-        _errorMessage = "Error: ${_handleError(e)}";
-      });
+    }
+
+    try {
+      await _issueFine();
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+
+      if (statusCode == 404) {
+        try {
+          // Prova a registrare la targa
+          await dio.post('/users/me/cars', data: {
+            "plate": plate,
+            "brand": "Unknown",
+            "model": "Unknown",
+          });
+          // Riprova la multa
+          await _issueFine();
+          return;
+        } catch (e2) {
+          setState(() {
+            _errorMessage = "Failed to register car or re-issue fine: ${_handleError(e2)}";
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = _handleError(e);
+        });
+      }
     } finally {
       setState(() {
         _loading = false;

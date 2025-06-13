@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'totem_install.dart';
+import 'package:dio/dio.dart';
+import '../API/client.dart';
 
 class TotemOtpPage extends StatefulWidget {
   const TotemOtpPage({super.key});
@@ -10,8 +12,9 @@ class TotemOtpPage extends StatefulWidget {
 
 class _TotemOtpPageState extends State<TotemOtpPage> {
   final TextEditingController _otpController = TextEditingController();
+  bool _loading = false;
 
-  void _submitOtp() {
+  void _submitOtp() async {
     final otp = _otpController.text.trim();
     if (otp.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -20,16 +23,39 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
       return;
     }
 
-    // Bypassa ogni verifica e passa direttamente alla pagina di installazione
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TotemInstallPage(
-          enabledZones: const [],  // potrai fare una GET nella pagina successiva
-          otp: otp,
-        ),
-      ),
-    );
+    setState(() => _loading = true);
+
+    try {
+      final dio = DioClient().dio;
+
+      // Unica richiesta: ottiene zone associate all'OTP
+      final zonesRes = await dio.get('/zones/me/$otp');
+      final List<dynamic> zones = zonesRes.data;
+
+      if (zones.isEmpty) {
+        throw Exception("No zones available for this OTP.");
+      }
+
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TotemInstallPage(
+              enabledZones: zones.cast<Map<String, dynamic>>(),
+              otp: otp,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      String msg = "OTP not valid or network error.";
+      if (e is DioError && e.response != null && e.response?.statusCode == 404) {
+        msg = "OTP not valid.";
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -65,9 +91,11 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _submitOtp,
+                      onPressed: _loading ? null : _submitOtp,
                       style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: const Text("OK", style: TextStyle(fontSize: 16)),
+                      child: _loading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text("OK", style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],

@@ -55,7 +55,7 @@ class _AdminAdminManagementPageState extends State<AdminAdminManagementPage> {
           final zoneUsers = List<Map<String, dynamic>>.from(zoneUsersRes.data);
 
           for (final user in zoneUsers) {
-            if (user['role'] == 'admin') {
+            if (user['role'] == 'admin' && user['assigned_by'] == admin && user['username'] != admin) {
               if (!groupedAdmins.containsKey(user['username'])) {
                 groupedAdmins[user['username']] = [];
               }

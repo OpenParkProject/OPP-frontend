@@ -20,6 +20,8 @@ class ParkingZone {
   final String createdAt;
   final String updatedAt;
   
+  String? assignedBy;
+
   // Derived properties
   double? latitude;
   double? longitude;
@@ -35,6 +37,7 @@ class ParkingZone {
     required this.id,
     required this.createdAt,
     required this.updatedAt,
+    this.assignedBy,
   }) {
     _extractCoordinates();
   }
@@ -420,7 +423,12 @@ Widget build(BuildContext context) {
                                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                             ),
                                             SizedBox(height: 8),
-                                            Text("• Price: €${zone.hourlyRate.toStringAsFixed(2)}/hr"),
+                                            Text(
+                                              "• Price: offset €${zone.priceOffset.toStringAsFixed(2)}, "
+                                              "linear €${zone.priceLin.toStringAsFixed(2)}, "
+                                              "exp €${zone.priceExp.toStringAsFixed(2)}",
+                                              style: TextStyle(fontSize: 14),
+                                            ),
                                             Text("• Distance: ${(distance / 1000).toStringAsFixed(2)} km"),
                                             Text("• Zone ID: ${zone.id}"),
                                             Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",
@@ -448,7 +456,12 @@ Widget build(BuildContext context) {
                                                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                                                   ),
                                                   SizedBox(height: 8),
-                                                  Text("• Price: €${zone.hourlyRate.toStringAsFixed(2)}/hr"),
+                                                  Text(
+                                                    "• Price: offset €${zone.priceOffset.toStringAsFixed(2)}, "
+                                                    "linear €${zone.priceLin.toStringAsFixed(2)}, "
+                                                    "exp €${zone.priceExp.toStringAsFixed(2)}",
+                                                    style: TextStyle(fontSize: 14),
+                                                  ),
                                                   Text("• Distance: ${(distance / 1000).toStringAsFixed(2)} km"),
                                                   Text("• Zone ID: ${zone.id}"),
                                                   Text("Max hours: ${zone.metadata['max_hours'] ?? 'No limit'}",

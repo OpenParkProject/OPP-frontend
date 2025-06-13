@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
 
         await DioClient().setAuthToken();
 
-        _showMessage("Login successful: Welcome, ${user['username']}!");
+        //_showMessage("Login successful: Welcome, ${user['username']}!");
 
         String role = user['role'] ?? '';
         globalRole = role; // Store globally for later use
@@ -126,6 +126,12 @@ class _LoginPageState extends State<LoginPage> {
         confirm,
       ].any((e) => e.isEmpty)) {
         _showMessage("Please fill in all fields");
+        return;
+      }
+
+      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+      if (!emailRegex.hasMatch(email)) {
+        _showMessage("Please enter a valid email address");
         return;
       }
 

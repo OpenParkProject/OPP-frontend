@@ -66,7 +66,7 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
           final zoneUsers = List<Map<String, dynamic>>.from(zoneUsersRes.data);
 
           for (final user in zoneUsers) {
-            if (user['role'] == 'controller') {
+            if (user['role'] == 'controller' && user['assigned_by'] == admin) {
               if (!groupedControllers.containsKey(user['username'])) {
                 groupedControllers[user['username']] = [];
               }

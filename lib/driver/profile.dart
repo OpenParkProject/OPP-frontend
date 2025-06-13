@@ -155,7 +155,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           TextFormField(
                             initialValue: newUsername,
                             decoration: InputDecoration(labelText: "Username"),
-                            onSaved: (val) => newUsername = val,
+                            enabled: false,
                           ),
                           TextFormField(
                             initialValue: newEmail,

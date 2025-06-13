@@ -8,7 +8,7 @@ import 'package:dio/dio.dart';
 import 'dart:io';
 
 class TotemInstallPage extends StatefulWidget {
-  final List<String> enabledZones;
+  final List<Map<String, dynamic>> enabledZones;
   final String otp;
 
   const TotemInstallPage({
@@ -23,9 +23,9 @@ class TotemInstallPage extends StatefulWidget {
 
 class _TotemInstallPageState extends State<TotemInstallPage> {
   LatLng? _currentLocation;
-  String? _selectedZone;
   String? _macAddress;
   bool _rfidEnabled = false;
+  Map<String, dynamic>? _selectedZone;
 
   @override
   void initState() {
@@ -84,22 +84,7 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
 
     try {
       final dio = DioClient().dio;
-
-      // 1. Recupera il vero ID della zona selezionata (dal nome)
-      final zonesResponse = await dio.get('/zones/me');
-      final zoneMatch = (zonesResponse.data as List).firstWhere(
-        (z) => z['name'] == _selectedZone,
-        orElse: () => null,
-      );
-
-      if (zoneMatch == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Selected zone not valid.")),
-        );
-        return;
-      }
-
-      final zoneId = zoneMatch['id'];
+      final zoneId = _selectedZone!['id'];
 
       // 3. Invia la richiesta POST
       final payload = {
@@ -146,14 +131,14 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("MAC Address:", style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text("Totem ID:", style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           SelectableText(_macAddress ?? "Loading MAC..."),
                           const SizedBox(height: 16),
                           const Text("Adjust totem location on map:", style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10),
                           SizedBox(
-                            height: 250,
+                            height: 350,
                             child: FlutterMap(
                               options: MapOptions(
                                 center: _currentLocation,
@@ -177,11 +162,14 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
                           const SizedBox(height: 16),
                           const Text("Select installation zone:", style: TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
+                          DropdownButtonFormField<Map<String, dynamic>>(
                             value: _selectedZone,
                             hint: const Text("Choose a zone"),
-                            items: widget.enabledZones.map((z) {
-                              return DropdownMenuItem(value: z, child: Text(z));
+                            items: widget.enabledZones.map((zone) {
+                              return DropdownMenuItem(
+                                value: zone,
+                                child: Text("Zone ${zone['id']} - ${zone['name']}"),
+                              );
                             }).toList(),
                             onChanged: (val) => setState(() => _selectedZone = val),
                             decoration: const InputDecoration(border: OutlineInputBorder()),

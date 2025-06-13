@@ -104,18 +104,30 @@ class _AddEditDialogState extends State<AddEditDialog> {
         if (!isEdit) "password": password,
       };
 
+      bool userAlreadyExists = false;
+
       if (isEdit) {
         await dio.patch("/users/${widget.existing!['id']}", data: data);
       } else {
-        await dio.post("/register", data: data);
+        try {
+          await dio.post("/register", data: data);
+        } on DioException catch (e) {
+          if (e.response?.statusCode == 409) {
+            userAlreadyExists = true;
+          } else {
+            rethrow;
+          }
+        }
+      }
 
-        if (!widget.noZoneAssignment) {
-          for (final zid in zones) {
+      if (!widget.noZoneAssignment) {
+        for (final zid in zones) {
+          try {
             await dio.post("/zones/$zid/users", data: {
               "username": username,
               "role": widget.role,
             });
-          }
+          } catch (_) {}
         }
       }
 
