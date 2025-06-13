@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dio/dio.dart';
 import '../API/client.dart';
 
 class TotemMapAdminPage extends StatefulWidget {
@@ -34,18 +33,12 @@ class _TotemMapAdminPageState extends State<TotemMapAdminPage> {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      final List<String> macs = prefs.getStringList("totem_macs") ?? [];
+      final response = await dio.get('/totems');
+      final allTotems = List<Map<String, dynamic>>.from(response.data);
 
-      List<Map<String, dynamic>> filteredTotems = [];
-
-      for (String mac in macs) {
-        final response = await dio.get('/totems/config', queryParameters: {'id': mac});
-        final t = response.data;
-
-        if (zoneIds.contains(t['zone_id'].toString())) {
-          filteredTotems.add(t);
-        }
-      }
+      final filteredTotems = allTotems.where((t) =>
+        zoneIds.contains(t['zone_id'].toString())
+      ).toList();
 
       setState(() {
         _totems = filteredTotems;

@@ -95,7 +95,7 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
         "otp": widget.otp,
       };
 
-      await dio.post('/totems/register', data: payload);
+      await dio.post('/totems', data: payload);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Totem registered successfully!")),
