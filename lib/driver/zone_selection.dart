@@ -140,7 +140,68 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    _checkTotemMode();
+  }
+
+  Future<void> _checkTotemMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isTotem = prefs.getBool('isTotem') ?? false;
+
+    if (isTotem) {
+      final zoneId = prefs.getInt('zone_id');
+      final zoneName = prefs.getString('zone_name');
+      final offset = double.tryParse(prefs.getString('price_offset') ?? '0') ?? 0;
+      final lin = double.tryParse(prefs.getString('price_lin') ?? '0') ?? 0;
+      final exp = double.tryParse(prefs.getString('price_exp') ?? '0') ?? 0;
+
+      final dummyZone = ParkingZone(
+        id: zoneId ?? 0,
+        name: zoneName ?? 'Totem Zone',
+        available: true,
+        geometry: '{"type":"Polygon","coordinates":[[[0,0],[0,0],[0,0],[0,0]]]}',
+        metadata: {},
+        priceOffset: offset,
+        priceLin: lin,
+        priceExp: exp,
+        createdAt: '',
+        updatedAt: '',
+      );
+
+      // recupera username per decidere il flusso
+      await DioClient().setAuthToken();
+      final response = await DioClient().dio.get("/users/me");
+      final username = response.data['username'];
+
+      if (!mounted) return;
+
+      if (username == "guest") {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => SimplePlateInputPage()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MyCarsPage(
+              onPlateSelected: (plate) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SelectDurationPage(
+                      plate: plate,
+                      selectedZone: dummyZone,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+    } else {
+      _determinePosition(); // comportamento normale
+    }
   }
 
   Future<void> _determinePosition() async {
@@ -255,7 +316,7 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
           await prefs.remove('access_token');
           DioClient().clearAuthToken();
         }
-        return true; // consente effettivamente il pop
+        return true;
       },
       child: Scaffold(
         appBar: AppBar(title: Text('Select Parking Zone')),
@@ -296,7 +357,44 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
+                                    Row(
+                                      children: [
+                                        Text("€${zone.hourlyRate.toStringAsFixed(2)}/hr • ${(distance / 1000).toStringAsFixed(2)} km"),
+                                        SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (_) => AlertDialog(
+                                                title: Text("Rate for zone ${zone.name}"),
+                                                content: Text(
+                                                  "This zone applies a tariff calculated as:\n\n"
+                                                  "Cost = offset + (lin × t)^exp\n"
+                                                  "where t is the duration in hours.\n\n"
+                                                  "🔹 Coefficients:\n"
+                                                  "• Offset: €${zone.priceOffset.toStringAsFixed(2)}\n"
+                                                  "• Linear: €${zone.priceLin.toStringAsFixed(2)} / h\n"
+                                                  "• Exponential: ${zone.priceExp.toStringAsFixed(2)}\n\n"
+                                                  "➡️ The longer you park, the higher the incremental cost.",
+                                                  textAlign: TextAlign.left,
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.pop(context),
+                                                    child: Text("OK"),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                          child: Icon(Icons.info_outline, size: 18),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      "Offset: €${zone.priceOffset.toStringAsFixed(2)} • Lin: €${zone.priceLin.toStringAsFixed(2)} • Exp: ${zone.priceExp.toStringAsFixed(2)}",
+                                      style: TextStyle(fontSize: 12),
+                                    ),
                                     if (zone.metadata['max_hours'] != null)
                                       Text("Max hours: ${zone.metadata['max_hours']}", style: TextStyle(fontSize: 12)),
                                   ],
@@ -322,43 +420,26 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                 enabled: zone.available,
                                 onTap: zone.available
                                     ? () async {
-                                        try {
-                                          await DioClient().setAuthToken();
-                                          final dio = DioClient().dio;
-                                          final response = await dio.get("/users/me");
-                                          final username = response.data['username'];
+                                        final prefs = await SharedPreferences.getInstance();
+                                        await prefs.setInt("selected_zone_id", zone.id);
+                                        await DioClient().setAuthToken();
+                                        final dio = DioClient().dio;
+                                        final response = await dio.get("/users/me");
+                                        final username = response.data['username'];
 
-                                          if (username == "guest") {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => SimplePlateInputPage(selectedZone: zone),
-                                              ),
-                                            );
-                                          } else {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => MyCarsPage(
-                                                  onPlateSelected: (plate) {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (_) => SelectDurationPage(
-                                                          plate: plate,
-                                                          selectedZone: zone,
-                                                        ),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        } catch (e) {
-                                          debugPrint("Error fetching user: $e");
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text("Unable to determine user identity.")),
+                                        if (!mounted) return;
+
+                                        if (username == "guest") {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(builder: (_) => const SimplePlateInputPage()),
+                                          );
+                                        } else {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const MyCarsPage(),
+                                            ),
                                           );
                                         }
                                       }

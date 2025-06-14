@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'dart:io' show Platform;
 import 'card_payment.dart';
 import 'manual_card_form.dart';
+import 'tickets.dart';
 
 const bool debugCard = false;
 
@@ -15,6 +16,7 @@ class ParkingPaymentPage extends StatelessWidget {
   final int durationMinutes;
   final double totalCost;
   final bool allowPayLater;
+  final String? zoneName;
 
   const ParkingPaymentPage({
     required this.ticketId,
@@ -23,6 +25,7 @@ class ParkingPaymentPage extends StatelessWidget {
     required this.durationMinutes,
     required this.totalCost,
     this.allowPayLater = true,
+    this.zoneName,
     super.key,
   });
 
@@ -58,7 +61,6 @@ class ParkingPaymentPage extends StatelessWidget {
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
       );
       Navigator.popUntil(context, (route) => route.isFirst);
-;
     } catch (e) {
       String msg = "❌ Payment failed.";
       if (e is DioError && e.response?.data is Map) {
@@ -74,7 +76,7 @@ class ParkingPaymentPage extends StatelessWidget {
       await DioClient().setAuthToken();
       await DioClient().dio.delete('/tickets/$ticketId');
       
-      Navigator.pop(context, true);
+      Navigator.popUntil(context, (route) => route.isFirst);
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("🗑️ Ticket cancelled and deleted."),
@@ -111,7 +113,7 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Confirm your parking", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text("Plate: $plate", style: TextStyle(fontSize: 16)),
-                Text("Zone: Default", style: TextStyle(fontSize: 16)),
+                Text("Zone: ${zoneName ?? 'Unknown'}", style: TextStyle(fontSize: 16)),
                 SizedBox(height: 10),
                 Text("From: $fromFormatted", style: TextStyle(fontSize: 14)),
                 Text("To: $toFormatted", style: TextStyle(fontSize: 14)),
@@ -163,7 +165,7 @@ class ParkingPaymentPage extends StatelessWidget {
                 OutlinedButton.icon(
                   onPressed: () {
                     if (allowPayLater) {
-                      Navigator.pop(context, true);
+                      Navigator.popUntil(context, (route) => route.isFirst);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text("💤 Ticket created but not paid yet! Remember to pay it to make it valid."),
                       ));

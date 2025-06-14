@@ -12,6 +12,7 @@ import 'API/client.dart';
 import 'controller/issue_fine.dart';
 import 'installer/totem_otp.dart';
 import 'utils/totem_config_manager.dart';
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -203,6 +204,7 @@ class ParkingApp extends StatelessWidget {
       routes: {
         '/issue_fine': (context) => const IssueFinePage(),
       },
+      navigatorObservers: [routeObserver],
     );
   }
 }

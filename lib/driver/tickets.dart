@@ -10,15 +10,22 @@ import 'dart:io';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
-
+import '../main.dart';
 class UserTicketsPage extends StatefulWidget {
   const UserTicketsPage({super.key});
+
+  static Route<void> routeWithRefresh() {
+    return MaterialPageRoute(
+      builder: (context) => const UserTicketsPage(),
+      settings: RouteSettings(name: 'tickets_page'),
+    );
+  }
 
   @override
   State<UserTicketsPage> createState() => _UserTicketsPageState();
 }
 
-class _UserTicketsPageState extends State<UserTicketsPage> {
+class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
   Timer? refreshTimer;
   Map<int, String> zoneNames = {};
   List<Map<String, dynamic>> activeTickets = [];
@@ -112,6 +119,25 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
     refreshTimer = Timer.periodic(Duration(seconds: 30), (_) {
       _refreshActiveStatus();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint("Tickets refreshed");
+    _fetchTickets();
   }
 
   void _refreshActiveStatus() {
@@ -502,6 +528,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                           }
                         : () async {
                             scheduledUnpaid.clear();
+
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -512,11 +539,11 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                                   durationMinutes: end!.difference(start).inMinutes,
                                   totalCost: price,
                                   allowPayLater: false,
+                                  zoneName: zoneNames[ticket['zone_id']] ?? '',
                                 ),
                               ),
                             );
 
-                            // Se la pagina ha restituito true (es. in caso di cancel/delete), aggiorna
                             if (result == true) {
                               await Future.delayed(Duration(milliseconds: 300));
                               await _fetchTickets();
@@ -559,7 +586,12 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                           }
 
 
-                        await Navigator.push(
+                      try {
+                        await DioClient().setAuthToken();
+                        final zoneRes = await DioClient().dio.get('/zones/${ticket['zone_id']}');
+                        final zone = zoneRes.data;
+
+                        final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (_) => ExtendTicketPage(
@@ -569,15 +601,21 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
                               oldEnd: newEnd,
                               oldPrice: newPrice,
                               zoneId: ticket['zone_id'],
-                              priceOffset: ticket['price_offset']?.toDouble() ?? 0.0,
-                              priceLin: ticket['price_lin']?.toDouble() ?? 1.0,
-                              priceExp: ticket['price_exp']?.toDouble() ?? 1.0,
                             ),
                           ),
                         );
-                        await Future.delayed(Duration(milliseconds: 300));
-                        await _fetchTickets();
-                      },
+
+                        if (result == true) {
+                          await Future.delayed(Duration(milliseconds: 300));
+                          await _fetchTickets();
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("❌ Failed to fetch zone info")),
+                        );
+                      }
+                        },
+
                       icon: Icon(Icons.schedule_send),
                       label: Text("Extend"),
                       style: ElevatedButton.styleFrom(
@@ -594,12 +632,6 @@ class _UserTicketsPageState extends State<UserTicketsPage> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    refreshTimer?.cancel();
-    super.dispose();
   }
 
   @override

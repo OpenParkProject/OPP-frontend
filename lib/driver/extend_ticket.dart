@@ -12,11 +12,6 @@ class ExtendTicketPage extends StatefulWidget {
   final double oldPrice;
   final int zoneId;
 
-  // Nuovi parametri per la formula
-  final double priceOffset;
-  final double priceLin;
-  final double priceExp;
-
   const ExtendTicketPage({
     required this.ticketId,
     required this.plate,
@@ -24,9 +19,6 @@ class ExtendTicketPage extends StatefulWidget {
     required this.oldEnd,
     required this.oldPrice,
     required this.zoneId,
-    required this.priceOffset,
-    required this.priceLin,
-    required this.priceExp,
     super.key,
   });
 
@@ -36,6 +28,37 @@ class ExtendTicketPage extends StatefulWidget {
 
 class _ExtendTicketPageState extends State<ExtendTicketPage> {
   int extraMinutes = 30;
+  double? priceOffset;
+  double? priceLin;
+  double? priceExp;
+  bool loading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchZoneData();
+  }
+
+  Future<void> _fetchZoneData() async {
+    try {
+      await DioClient().setAuthToken();
+      final response = await DioClient().dio.get('/zones/${widget.zoneId}');
+      final zone = response.data;
+
+      setState(() {
+        priceOffset = (zone['price_offset'] as num?)?.toDouble() ?? 0.0;
+        priceLin = (zone['price_lin'] as num?)?.toDouble() ?? 1.0;
+        priceExp = (zone['price_exp'] as num?)?.toDouble() ?? 1.0;
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        error = "❌ Failed to load zone pricing";
+        loading = false;
+      });
+    }
+  }
 
   void _changeDuration(int delta) {
     setState(() {
@@ -50,17 +73,38 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
     return m == 0 ? "${h}h" : "${h}h ${m}m";
   }
 
-  double _calculatePrice(int minutes) {
-    final t = minutes / 60.0;
-    return widget.priceOffset + pow(widget.priceLin * t, widget.priceExp);
+  double _calculateDeltaPrice(int oldMinutes, int newTotalMinutes) {
+    if (priceOffset == null || priceLin == null || priceExp == null) return 0.0;
+
+    final tOld = oldMinutes / 60.0;
+    final tNew = newTotalMinutes / 60.0;
+
+    final fullOld = priceOffset! + pow(priceLin! * tOld, priceExp!);
+    final fullNew = priceOffset! + pow(priceLin! * tNew, priceExp!);
+
+    return fullNew - fullOld;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return Scaffold(
+        appBar: AppBar(title: Text("Extend Ticket")),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (error != null) {
+      return Scaffold(
+        appBar: AppBar(title: Text("Extend Ticket")),
+        body: Center(child: Text(error!)),
+      );
+    }
+
     final oldDuration = widget.oldEnd.difference(widget.oldStart).inMinutes;
     final newTotalDuration = oldDuration + extraMinutes;
     final newEnd = widget.oldStart.add(Duration(minutes: newTotalDuration));
-    final additionalCost = _calculatePrice(newTotalDuration) - widget.oldPrice;
+    final additionalCost = _calculateDeltaPrice(oldDuration, newTotalDuration);
 
     return Scaffold(
       appBar: AppBar(title: Text("Extend Ticket")),
@@ -163,8 +207,7 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                 onPressed: () async {
                   final newStart = widget.oldEnd.toUtc();
                   final newDuration = extraMinutes;
-                  final newTotal = _calculatePrice(widget.oldEnd.difference(widget.oldStart).inMinutes + newDuration);
-                  final cost = newTotal - widget.oldPrice;
+                  final cost = _calculateDeltaPrice(oldDuration, oldDuration + newDuration);
 
                   try {
                     await DioClient().setAuthToken();
@@ -189,13 +232,14 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
                           durationMinutes: newDuration,
                           totalCost: cost,
                           allowPayLater: false,
+                          zoneName: "", // se vuoi lasciare vuoto oppure rimuovere del tutto
                         ),
                       ),
                     );
 
-                    if (result == true) {
-                      Navigator.pop(context, true);
-                    }
+                  if (result == true) {
+                    Navigator.pop(context, true);
+                  }
 
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(

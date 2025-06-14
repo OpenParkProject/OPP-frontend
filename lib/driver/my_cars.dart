@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../API/client.dart';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'create_ticket.dart';
+import 'zone_selection.dart';
 
 class MyCarsPage extends StatefulWidget {
   final void Function(String)? onPlateSelected;
@@ -19,6 +22,8 @@ class _MyCarsPageState extends State<MyCarsPage> {
   List<Map<String, String>> userPlates = [];
   bool loadingPlates = true;
   String? _feedbackMessage;
+  Set<String> disabledPlates = {};
+
 
   @override
   void initState() {
@@ -29,18 +34,35 @@ class _MyCarsPageState extends State<MyCarsPage> {
   Future<void> _fetchPlates() async {
     try {
       await DioClient().setAuthToken();
-      final response = await DioClient().dio.get("/users/me/cars");
+      final dio = DioClient().dio;
 
-      final fetchedCars = (response.data as List)
+      // 🔹 1. Fetch plates
+      final carsRes = await dio.get("/users/me/cars");
+      final fetchedCars = (carsRes.data as List)
           .map((car) => {
-                "plate": car['plate']?.toString().toUpperCase() ?? '',
+                "plate": car['plate']?.toString().toUpperCase().trim() ?? '',
                 "model": car['model']?.toString() ?? '',
                 "brand": car['brand']?.toString() ?? ''
               })
           .toList();
 
+
+      // 🔹 2. Fetch active tickets (valid_only = true)
+      final ticketsRes = await dio.get("/users/me/tickets", queryParameters: {
+        "valid_only": "true", // <-- must be string!
+      });
+
+      final List<dynamic> ticketList = ticketsRes.data;
+
+      final Set<String> activePlates = ticketList
+          .where((t) => t['paid'] == true)
+          .map((t) => t['plate'].toString().toUpperCase().trim())
+          .toSet();
+
+
       setState(() {
         userPlates = fetchedCars;
+        disabledPlates = activePlates;
         loadingPlates = false;
       });
     } catch (e) {
@@ -123,6 +145,34 @@ class _MyCarsPageState extends State<MyCarsPage> {
     }
   }
 
+  Future<void> _handlePlateSelection(String plate) async {
+    final prefs = await SharedPreferences.getInstance();
+    final zoneId = prefs.getInt("selected_zone_id");
+
+    if (zoneId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No zone selected.")));
+      return;
+    }
+
+    try {
+      await DioClient().setAuthToken();
+      final res = await DioClient().dio.get("/zones/$zoneId");
+      final zone = ParkingZone.fromJson(res.data);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SelectDurationPage(
+            plate: plate,
+            selectedZone: zone,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to load zone info.")));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,70 +188,26 @@ class _MyCarsPageState extends State<MyCarsPage> {
               ...userPlates.map((car) {
                 final plate = car['plate'] ?? '';
                 final label = "${car['brand'] ?? ''} ${car['model'] ?? ''}".trim();
+                final isDisabled = disabledPlates.contains(plate);
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: widget.onPlateSelected != null
-                      ? ListTile(
-                          leading: Icon(Icons.directions_car),
-                          title: Text(plate, style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(label),
-                          trailing: Icon(Icons.arrow_forward),
-                          onTap: () => widget.onPlateSelected!(plate),
-                        )
-                      : ListTile(
-                          leading: Icon(Icons.directions_car),
-                          title: Text(plate, style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(label),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () {
-                                  _brandController.text = car['brand'] ?? '';
-                                  _modelController.text = car['model'] ?? '';
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text("Edit $plate"),
-                                      content: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          TextField(
-                                            controller: _brandController,
-                                            decoration: InputDecoration(labelText: "Brand"),
-                                          ),
-                                          TextField(
-                                            controller: _modelController,
-                                            decoration: InputDecoration(labelText: "Model"),
-                                          ),
-                                        ],
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context),
-                                          child: Text("Cancel"),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            _editCar(plate, _brandController.text.trim(), _modelController.text.trim());
-                                          },
-                                          child: Text("Save"),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteCar(plate),
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: ListTile(
+                    leading: Icon(Icons.directions_car),
+                    title: Text(
+                      plate,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDisabled ? Colors.grey : null,
+                      ),
+                    ),
+                    subtitle: Text(label + (isDisabled ? " – There is already an active ticket for this car" : "")),
+                    trailing: isDisabled
+                        ? Icon(Icons.block, color: Colors.red)
+                        : Icon(Icons.arrow_forward),
+                    tileColor: isDisabled ? Colors.grey.shade200 : null,
+                    onTap: isDisabled ? null : () => _handlePlateSelection(plate),
+                  ),
                 );
               }),
               Divider(),

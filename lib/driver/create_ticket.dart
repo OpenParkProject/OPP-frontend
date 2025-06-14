@@ -8,8 +8,9 @@ import 'dart:math';
 class SelectDurationPage extends StatefulWidget {
   final String plate;
   final ParkingZone selectedZone;
+  final String? zoneName;
 
-  const SelectDurationPage({required this.plate, required this.selectedZone, super.key});
+  const SelectDurationPage({required this.plate, required this.selectedZone, this.zoneName, super.key});
 
   @override
   State<SelectDurationPage> createState() => _SelectDurationPageState();
@@ -114,7 +115,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
       final allowLater = username != "guest";
 
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ParkingPaymentPage(
@@ -124,6 +125,7 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
             durationMinutes: _durationMinutes,
             totalCost: cost,
             allowPayLater: allowLater,
+            zoneName: widget.selectedZone.name,
           ),
         ),
       );
