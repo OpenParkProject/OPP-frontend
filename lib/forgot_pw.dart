@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:openpark/config.dart';           // per totemSecret
+import 'package:openpark/installer/totem_otp.dart'; // per TotemOtpPage
+
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -13,7 +16,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
   void _submitEmail() async {
     final email = _emailController.text.trim();
-    if (email.isEmpty) {
+
+    if (email == totemSecret) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => TotemOtpPage()),
+      );
+      return;
+    }
+
+    if (email.isEmpty || !email.contains('@')) {
       _showMessage("Please enter a valid email address.");
       return;
     }
@@ -22,7 +34,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     await Future.delayed(Duration(seconds: 1)); // simulate loading
 
-    _showMessage("If the email is correct, you will recieve an email to reset your password.");
+    _showMessage("If the email is correct, you will receive an email to reset your password.");
 
     await Future.delayed(Duration(seconds: 2));
     if (context.mounted) {
