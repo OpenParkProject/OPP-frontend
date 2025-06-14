@@ -147,7 +147,7 @@ class _MyCarsPageState extends State<MyCarsPage> {
 
   Future<void> _handlePlateSelection(String plate) async {
     final prefs = await SharedPreferences.getInstance();
-    final zoneId = prefs.getInt("selected_zone_id");
+    final zoneId = prefs.getInt("selected_zone_id") ?? prefs.getInt("zone_id");
 
     if (zoneId == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No zone selected.")));

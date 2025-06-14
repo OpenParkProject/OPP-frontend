@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../API/client.dart';
 import 'payment.dart';
+import 'payment_totem.dart';
 import 'zone_selection.dart';
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SelectDurationPage extends StatefulWidget {
   final String plate;
@@ -115,18 +117,35 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
       final allowLater = username != "guest";
 
+      final prefs = await SharedPreferences.getInstance();
+      final isTotem = prefs.getBool("isTotem") ?? false;
+      final isRfidEnabled = prefs.getBool("rfid_enabled") ?? false;
+
+      debugPrint("[CreateTicket] SharedPreferences: totem_mode = $isTotem, rfid_enabled = $isRfidEnabled");
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ParkingPaymentPage(
-            ticketId: ticketId,
-            plate: widget.plate,
-            startDate: startDate,
-            durationMinutes: _durationMinutes,
-            totalCost: cost,
-            allowPayLater: allowLater,
-            zoneName: widget.selectedZone.name,
-          ),
+        builder: (_) => isTotem
+            ? ParkingPaymentTotemPage(
+                ticketId: ticketId,
+                plate: widget.plate,
+                startDate: startDate,
+                durationMinutes: _durationMinutes,
+                totalCost: cost,
+                zoneName: widget.selectedZone.name,
+              )
+            : ParkingPaymentPage(
+                ticketId: ticketId,
+                plate: widget.plate,
+                startDate: startDate,
+                durationMinutes: _durationMinutes,
+                totalCost: cost,
+                allowPayLater: allowLater,
+                zoneName: widget.selectedZone.name,
+                isTotem: isTotem,
+                isRfidEnabled: isRfidEnabled,
+              ),
         ),
       );
     } catch (e) {

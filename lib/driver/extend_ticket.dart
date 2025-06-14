@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'payment.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'payment_totem.dart';
+
 
 class ExtendTicketPage extends StatefulWidget {
   final int ticketId;
@@ -222,20 +225,38 @@ class _ExtendTicketPageState extends State<ExtendTicketPage> {
 
                     final newTicketId = response.data['id'];
 
+                    final prefs = await SharedPreferences.getInstance();
+                    final isTotem = prefs.getBool("isTotem") ?? false;
+                    final isRfidEnabled = prefs.getBool("rfid_enabled") ?? false;
+
+                    debugPrint("[ExtendTicket] SharedPreferences: totem_mode = $isTotem, rfid_enabled = $isRfidEnabled");
+
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ParkingPaymentPage(
-                          ticketId: newTicketId,
-                          plate: widget.plate,
-                          startDate: widget.oldEnd,
-                          durationMinutes: newDuration,
-                          totalCost: cost,
-                          allowPayLater: false,
-                          zoneName: "", // se vuoi lasciare vuoto oppure rimuovere del tutto
-                        ),
+                        builder: (_) => isTotem
+                            ? ParkingPaymentTotemPage(
+                                ticketId: newTicketId,
+                                plate: widget.plate,
+                                startDate: widget.oldEnd,
+                                durationMinutes: newDuration,
+                                totalCost: cost,
+                                zoneName: "", // Puoi recuperarla se necessario
+                              )
+                            : ParkingPaymentPage(
+                                ticketId: newTicketId,
+                                plate: widget.plate,
+                                startDate: widget.oldEnd,
+                                durationMinutes: newDuration,
+                                totalCost: cost,
+                                allowPayLater: false,
+                                zoneName: "", // opzionale
+                                isTotem: isTotem,
+                                isRfidEnabled: isRfidEnabled,
+                              ),
                       ),
                     );
+
 
                   if (result == true) {
                     Navigator.pop(context, true);
