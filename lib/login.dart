@@ -251,7 +251,7 @@ class _LoginPageState extends State<LoginPage> {
           
     Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.only(top: 170),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: LayoutBuilder(
           builder: (context, constraints) {
             double width = constraints.maxWidth;

@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'dart:io' show Platform;
 import 'card_payment.dart';
 import 'manual_card_form.dart';
-import 'tickets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const bool debugCard = false;
 
@@ -31,11 +31,18 @@ class ParkingPaymentPage extends StatelessWidget {
 
   Widget _buildPaymentButton(BuildContext context, String label, IconData icon, Color color, String method) {
     return ElevatedButton.icon(
-      onPressed: () {
+      onPressed: () async {
         if (method == "Card") {
-          final page = Platform.isLinux || debugCard
+          final prefs = await SharedPreferences.getInstance();
+          final isTotem = prefs.getBool("totem_mode") ?? false;
+          final isRfidEnabled = prefs.getBool("rfid") ?? false;
+
+          final bool useRfidFlow = isTotem && isRfidEnabled && (Platform.isLinux || debugCard);
+
+          final page = useRfidFlow
               ? CardPaymentPage(onConfirmed: () => _payTicket(context, method))
               : ManualCardFormPage(onConfirmed: () => _payTicket(context, method));
+
           Navigator.push(context, MaterialPageRoute(builder: (context) => page));
         } else {
           _payTicket(context, method);
