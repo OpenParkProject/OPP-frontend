@@ -9,6 +9,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.7"
+  android_intent_plus:
+    dependency: "direct main"
+    description:
+      path: "packages/android_intent_plus"
+      ref: HEAD
+      resolved-ref: "6ebc0ead68df477f06c6d4738a69a9e56223cf47"
+      url: "https://github.com/fluttercommunity/plus_plugins.git"
+    source: git
+    version: "5.3.0"
   archive:
     dependency: transitive
     description:
@@ -456,14 +465,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
-  js:
-    dependency: transitive
-    description:
-      name: js
-      sha256: f2c445dce49627136094980615a031419f7f3eb393237e4ecd97ac15dea343f3
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.6.7"
   latlong2:
     dependency: "direct main"
     description:
@@ -560,14 +561,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  mobile_scanner:
-    dependency: "direct main"
-    description:
-      name: mobile_scanner
-      sha256: "1b60b8f9d4ce0cb0e7d7bc223c955d083a0737bee66fa1fcfe5de48225e0d5b3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.5.7"
   one_of:
     dependency: transitive
     description:
@@ -793,23 +786,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
-  qr_code_scanner:
-    dependency: "direct main"
-    description:
-      path: "."
-      ref: master
-      resolved-ref: "86b7ca33af56e1dab07179f3a3a03784310ed65c"
-      url: "https://github.com/juliuscanute/qr_code_scanner.git"
-    source: git
-    version: "1.0.0"
-  qr_flutter:
-    dependency: "direct main"
-    description:
-      name: qr_flutter
-      sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.1.0"
   quiver:
     dependency: transitive
     description:

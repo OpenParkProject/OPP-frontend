@@ -4,15 +4,16 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:openpark/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../API/client.dart';
-
 import '../login.dart';
 import '../driver/driver_layout.dart';
 import '../controller/controller_layout.dart';
 import '../admin/admin_layout.dart';
 import '../main.dart';
+import 'package:timezone/timezone.dart' as tz;
+import '../driver/card_payment.dart';
 
-class DebugRoleSelector extends StatelessWidget {
-  const DebugRoleSelector({super.key});
+class DebugRoleSelectorOnline extends StatelessWidget {
+  const DebugRoleSelectorOnline({super.key});
 
   Future<void> _navigateToRole(BuildContext context, String role) async {
     Widget destination;
@@ -132,32 +133,30 @@ class DebugRoleSelector extends StatelessWidget {
   }
 
   void _simulateExpiringTicketNotification() async {
-    try {
-      await flutterLocalNotificationsPlugin.show(
-        DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        '⏰ Ticket expiring soon!',
-        'Your parking will expire in 1 minute.',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'ticket_channel',
-            'Ticket Notifications',
-            channelDescription: 'Notify when ticket is about to expire',
-            importance: Importance.max,
-            priority: Priority.high,
-            visibility: NotificationVisibility.public,
-            ticker: 'Ticket Alert',
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.reminder,
-            styleInformation: BigTextStyleInformation('Your parking will expire in 1 minute. Extend your ticket now to avoid a fine.'),
-          ),
+    final now = DateTime.now();
+    final scheduleTime = now.add(Duration(seconds: 10)); // 10 secondi dopo
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      99999, // ID di test
+      '⏰ TEST: Ticket expiring!',
+      'Test notification scheduled 10 seconds after click.',
+      tz.TZDateTime.from(scheduleTime, tz.local),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'ticket_channel',
+          'Ticket Notifications',
+          channelDescription: 'Notify when ticket is about to expire',
+          importance: Importance.max,
+          priority: Priority.high,
+          visibility: NotificationVisibility.public,
         ),
-        payload: 'open_ticket',
-      );
-      debugPrint('[✓] Realistic ticket notification sent!');
-    } catch (e) {
-      debugPrint('[✗] Failed to send notification: $e');
-    }
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: 'open_ticket',
+      matchDateTimeComponents: null,
+    );
+
+    debugPrint('[✓] Scheduled test notification for $scheduleTime');
   }
 
   @override
@@ -199,6 +198,29 @@ class DebugRoleSelector extends StatelessWidget {
                 onPressed: _simulateExpiringTicketNotification,
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                 child: const Text('🔔 Simulate Expiring Ticket'),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool("totem_mode", true);
+                  await prefs.setBool("rfid", true);
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CardPaymentPage(
+                        onConfirmed: () async {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("✅ Test payment successful")),
+                          );
+                          Navigator.pop(context);
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('🧪 Test RFID Payment'),
               ),
             ],
           ),
