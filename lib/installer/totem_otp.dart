@@ -49,6 +49,35 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
       }
       return;
     }
+    if (otp == totemTestOtpRfidOn || otp == totemTestOtpRfidOff) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isTotem', true);
+      await prefs.setInt('zone_id', 1); // Dummy ID
+      await prefs.setString('zone_name', 'Test Zone');
+      await prefs.setDouble('latitude', 45.0703); // Example coordinates
+      await prefs.setDouble('longitude', 7.6869);
+      await prefs.setBool('rfid_enabled', otp == totemTestOtpRfidOn);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              otp == totemTestOtpRfidOn
+                  ? "Totem test mode activated (RFID enabled)"
+                  : "Totem test mode activated (RFID disabled)",
+            ),
+          ),
+        );
+        Future.delayed(const Duration(seconds: 2), () {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => LoginPage()),
+            (_) => false,
+          );
+        });
+      }
+      return;
+    }
 
     setState(() => _loading = true);
 

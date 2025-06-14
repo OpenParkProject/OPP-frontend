@@ -43,7 +43,7 @@ class _SimplePlateInputPageState extends State<SimplePlateInputPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final zoneId = prefs.getInt("selected_zone_id");
+      final zoneId = prefs.getInt("selected_zone_id") ?? prefs.getInt("zone_id");
 
       if (zoneId == null) {
         Navigator.pop(context);

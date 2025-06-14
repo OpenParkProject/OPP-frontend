@@ -18,6 +18,8 @@ class ParkingPaymentPage extends StatelessWidget {
   final double totalCost;
   final bool allowPayLater;
   final String? zoneName;
+  final bool isTotem;
+  final bool isRfidEnabled;
 
   const ParkingPaymentPage({
     required this.ticketId,
@@ -27,6 +29,8 @@ class ParkingPaymentPage extends StatelessWidget {
     required this.totalCost,
     this.allowPayLater = true,
     this.zoneName,
+    required this.isTotem,
+    required this.isRfidEnabled,
     super.key,
   });
 
@@ -109,6 +113,19 @@ class ParkingPaymentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final useRfidFlow = isTotem && isRfidEnabled && (Platform.isLinux || debugCard);
+
+    final buttons = useRfidFlow
+        ? [
+            _buildPaymentButton(context, "Pay by Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+          ]
+        : [
+            _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+            _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
+            _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
+            _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
+          ];
+
     final endDate = startDate.add(Duration(minutes: durationMinutes));
     final fromFormatted = "${DateFormat.Hm().format(startDate)} – ${startDate.day}/${startDate.month}";
     final toFormatted = "${DateFormat.Hm().format(endDate)} – ${endDate.day}/${endDate.month}";
@@ -139,8 +156,6 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Total: €${totalCost.toStringAsFixed(2)}",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                 SizedBox(height: 30),
-                
-                // Payment options section
                 Text("Choose your payment method: "),
                 SizedBox(height: 5),
                 LayoutBuilder(
@@ -148,13 +163,6 @@ class ParkingPaymentPage extends StatelessWidget {
                     final isWideScreen = constraints.maxWidth > 600;
                     final buttonWidth = isWideScreen ? 180.0 : double.infinity;
                     final spacing = isWideScreen ? 12.0 : 8.0;
-
-                    final buttons = [
-                      _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
-                      _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
-                      _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
-                      _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
-                    ];
 
                     if (isWideScreen) {
                       return Wrap(
@@ -177,7 +185,6 @@ class ParkingPaymentPage extends StatelessWidget {
                     }
                   },
                 ),
-
                 SizedBox(height: 15),
                 OutlinedButton.icon(
                   onPressed: () {
