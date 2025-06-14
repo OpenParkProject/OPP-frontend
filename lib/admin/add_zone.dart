@@ -3,6 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import '../API/client.dart';
+import 'fullscreen_map.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AddZonePage extends StatefulWidget {
   @override
@@ -138,14 +140,36 @@ class _AddZonePageState extends State<AddZonePage> {
         'price_exp': double.parse(_priceExpController.text),
       };
 
+      // Debug print
+      debugPrint("JSON Payload:");
+      debugPrint(const JsonEncoder.withIndent('  ').convert(zoneData));
+
       // Submit to API
       final response = await dio.post('/zones', data: zoneData);
       
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final createdZone = response.data;
+        final newZoneId = createdZone['id'].toString();
+        
+
+        final newZoneName = createdZone['name'];
+
+        final prefs = await SharedPreferences.getInstance();
+        final ids = prefs.getStringList("zone_ids") ?? [];
+        final names = prefs.getStringList("zone_names") ?? [];
+
+        if (!ids.contains(newZoneId)) {
+          ids.add(newZoneId);
+          names.add(newZoneName);  // aggiungi il nome corrispondente
+          await prefs.setStringList("zone_ids", ids);
+          await prefs.setStringList("zone_names", names);
+        }
+
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Zone created successfully')),
         );
-        Navigator.pop(context, true); // Return success to previous screen
+        Navigator.pop(context, true);
       } else {
         setState(() {
           _errorMessage = 'Failed to create zone: ${response.statusCode}';
@@ -183,81 +207,31 @@ class _AddZonePageState extends State<AddZonePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Map for drawing the zone
-                  Container(
-                    height: 300,
-                    padding: EdgeInsets.all(8),
-                    child: Stack(
-                      children: [
-                        FlutterMap(
-                          mapController: _mapController,
-                          options: MapOptions(
-                            center: _center,
-                            zoom: 14.0,
-                            onTap: (_, point) => _addPoint(point),
-                          ),
-                          children: [
-                            TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.openpark.app',
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.map),
+                        label: Text("Draw Zone on Map"),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FullscreenMapPage(initialPoints: _polygonPoints),
                             ),
-                            PolygonLayer(
-                              polygons: [
-                                Polygon(
-                                  points: _polygonPoints,
-                                  color: Colors.blue.withOpacity(0.4),
-                                  borderColor: Colors.blue,
-                                  borderStrokeWidth: 2.0,
-                                ),
-                              ],
-                            ),
-                            MarkerLayer(
-                              markers: _polygonPoints
-                                  .asMap()
-                                  .entries
-                                  .map((entry) => Marker(
-                                        width: 30.0,
-                                        height: 30.0,
-                                        point: entry.value,
-                                        child: Container(
-                                          child: Icon(
-                                            Icons.location_on,
-                                            color: Colors.red,
-                                            size: 30.0,
-                                          ),
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
-                          ],
-                        ),
-                        Positioned(
-                          bottom: 10,
-                          right: 10,
-                          child: Column(
-                            children: [
-                              FloatingActionButton(
-                                mini: true,
-                                heroTag: "clearPointsButton",
-                                onPressed: _clearPoints,
-                                child: Icon(Icons.clear),
-                                tooltip: 'Clear All Points',
-                              ),
-                              SizedBox(height: 8),
-                              FloatingActionButton(
-                                mini: true,
-                                heroTag: "undoPointButton",  // Add unique heroTag here
-                                onPressed: _undoLastPoint,
-                                child: Icon(Icons.undo),
-                                tooltip: 'Undo Last Point',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                          );
+                          if (result != null && result is List<LatLng>) {
+                            setState(() {
+                              _polygonPoints
+                                ..clear()
+                                ..addAll(result);
+                            });
+                          }
+                        },
+                      ),
                     ),
                   ),
-                  
-                  // Form for zone details
+                   // Form for zone details
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Form(

@@ -9,9 +9,12 @@ import 'controller/controller_layout.dart';
 import 'driver/driver_layout.dart';
 import 'driver/zone_selection.dart';
 import 'API/client.dart';
-import 'installer/install_totem.dart';
-import 'installer/totem_setup.dart';
+import 'installer/totem_otp.dart';
 import 'dart:io';
+import 'forgot_pw.dart';
+import '/superuser/superuser_layout.dart';
+
+
 
 class LoginPage extends StatefulWidget {
   @override
@@ -38,6 +41,38 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Map<String, dynamic>? totemInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTotemInfo();
+    _debugPrintSharedPrefs();
+  }
+
+  void _debugPrintSharedPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final allKeys = prefs.getKeys();
+
+    debugPrint('------ SharedPreferences ------');
+    for (var key in allKeys) {
+      final value = prefs.get(key);
+      debugPrint('$key: $value');
+    }
+    debugPrint('-------------------------------');
+  }
+
+  void _loadTotemInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('isTotem') == true) {
+      setState(() {
+        totemInfo = {
+          'zoneName': prefs.getString('zone_name') ?? 'Unknown zone',
+        };
+      });
+    }
+  }
+
   void _handleAuth() async {
     final username = _usernameController.text.trim();
     final password = _passwordController.text.trim();
@@ -58,15 +93,52 @@ class _LoginPageState extends State<LoginPage> {
 
         await DioClient().setAuthToken();
 
-        _showMessage("Login successful: Welcome, ${user['username']}!");
+        //_showMessage("Login successful: Welcome, ${user['username']}!");
 
         String role = user['role'] ?? '';
         globalRole = role; // Store globally for later use
 
-        if (role == "admin") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])));
+        if (role == "superuser") {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => SuperuserLayout(username: user['username'])),
+          );
+        } else if (role == "admin") {
+          try {
+            final zonesResponse = await dio.get('/zones/me');
+            final zoneList = zonesResponse.data as List<dynamic>;
+            final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+            final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+            await prefs.setStringList('zone_ids', zoneIds);
+            await prefs.setStringList('zone_names', zoneNames);
+          } catch (e) {
+            //_showMessage("Failed to fetch zones for admin");
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => AdminLayout(username: user['username'])),
+          );
         } else if (role == "controller") {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])));
+          try {
+            final zonesResponse = await dio.get('/zones/me');
+            final prefs = await SharedPreferences.getInstance();
+
+            final zoneList = zonesResponse.data as List<dynamic>;
+            final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+            final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+            await prefs.setStringList('zone_ids', zoneIds);
+            await prefs.setStringList('zone_names', zoneNames);
+          } catch (e) {
+            //_showMessage("Failed to fetch zones for controller");
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ControllerLayout(username: user['username'])),
+          );
         } else {
           Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainUserHomePage(username: user['username'])));
         }
@@ -88,6 +160,12 @@ class _LoginPageState extends State<LoginPage> {
         confirm,
       ].any((e) => e.isEmpty)) {
         _showMessage("Please fill in all fields");
+        return;
+      }
+
+      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+      if (!emailRegex.hasMatch(email)) {
+        _showMessage("Please enter a valid email address");
         return;
       }
 
@@ -171,11 +249,17 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           
-          Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 170),
+    Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double width = constraints.maxWidth;
+
+            return Container(
+              width: width < 600 ? width * 0.9 : width * 2 / 3,
               child: Card(
-                color: Colors.white.withAlpha((0.9*255).round()),
+                color: Colors.white.withAlpha((0.9 * 255).round()),
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -186,6 +270,30 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(height: 20),
+                      if (totemInfo != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.yellow.shade100,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Icon(Icons.memory, color: Colors.orange),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Running in Totem mode (${totemInfo!['zoneName']})',
+                                    style: TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
                         isSelected: [!isSignIn, isSignIn],
@@ -270,11 +378,17 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(isSignIn ? "Sign In" : "Create Account"),
                       ),
                       if (isSignIn)
+                        SizedBox(height: 3),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ForgotPasswordPage()),
+                            );
+                          },
                           onLongPress: () {
                             if (Platform.isWindows || Platform.isLinux) {
-                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemPage()));
+                              Navigator.push(context, MaterialPageRoute(builder: (_) => TotemOtpPage()));
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text("Totem setup is only available on desktop devices.")),
@@ -285,15 +399,54 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       SizedBox(height: 10),
                       ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ParkingZoneSelectionPage(),
-                            ),
-                          );
+                        onPressed: () async {
+                          try {
+                            final dio = DioClient().dio;
+
+                            try {
+                              final loginResp = await dio.post('/login', data: {
+                                'username': 'guest',
+                                'password': 'guest123',
+                              });
+                              final token = loginResp.data['access_token'];
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setString('access_token', token);
+                              DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                            } on DioException catch (e) {
+                              if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+                                await dio.post('/register', data: {
+                                  "name": "Guest",
+                                  "surname": "User",
+                                  "username": "guest",
+                                  "email": "guest@openpark.app",
+                                  "password": "guest123",
+                                  "role": "driver",
+                                });
+                                final loginResp = await dio.post('/login', data: {
+                                  'username': 'guest',
+                                  'password': 'guest123',
+                                });
+                                final token = loginResp.data['access_token'];
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('access_token', token);
+                                DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                              } else {
+                                throw Exception("Guest login error: ${e.message}");
+                              }
+                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ParkingZoneSelectionPage(fromGuest: true),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Guest login failed: $e")),
+                            );
+                          }
                         },
-                        icon: Icon(Icons.local_parking_outlined),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -302,18 +455,31 @@ class _LoginPageState extends State<LoginPage> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        label: Text(
-                          "Pay with plate (without login/registration)",
+                        label: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.directions_car),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                "Pay with plate (without login/registration)",
+                                textAlign: TextAlign.center,
+                              )
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+            );
+          },
+        ),
       ),
-    );
-  }
+    ),
+  ],
+),
+);
+}
 }

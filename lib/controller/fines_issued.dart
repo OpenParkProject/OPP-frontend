@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FinesIssuedPage extends StatefulWidget {
   const FinesIssuedPage({super.key});
@@ -36,38 +37,41 @@ class _FinesIssuedPageState extends State<FinesIssuedPage> {
     final targetDate = DateFormat('yyyy-MM-dd').format(selectedDate);
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final zoneIds = prefs.getStringList("zone_ids");
+      if (zoneIds == null || zoneIds.isEmpty) {
+        setState(() {
+          errorMessage = "No zone permissions found for this controller.";
+          loading = false;
+        });
+        return;
+      }
+
       final dio = DioClient().dio;
-      Response response;
+      final List<Map<String, dynamic>> allFines = [];
 
-      if (plate.isNotEmpty) {
-        response = await dio.get('/fines/$plate');
-      } else {
-        response = await dio.get('/fines');
-      }
+      for (final zid in zoneIds) {
+        final res = await dio.get('/zones/$zid/fines');
+        if (res.statusCode == 200 && res.data is List) {
+          for (final fine in res.data) {
+            final m = Map<String, dynamic>.from(fine);
+            if (plate.isNotEmpty && (m['plate'] ?? '').toString().toUpperCase() != plate) continue;
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final List<Map<String, dynamic>> allFines = [];
-
-        if (data is List) {
-          allFines.addAll(List<Map<String, dynamic>>.from(data));
-        } else if (data is Map) {
-          allFines.add(Map<String, dynamic>.from(data));
-        }
-
-        fines = allFines.where((fine) {
-          final dateStr = fine['date'];
-          if (dateStr == null) return false;
-          final parsed = DateTime.tryParse(dateStr);
-          if (parsed == null) return false;
-
-          if (plate.isEmpty) {
-            return DateFormat('yyyy-MM-dd').format(parsed.toLocal()) == targetDate;
+            final dateStr = m['date'];
+            if (dateStr != null) {
+              final parsed = DateTime.tryParse(dateStr);
+              if (parsed != null &&
+                  (plate.isNotEmpty || DateFormat('yyyy-MM-dd').format(parsed) == targetDate)) {
+                allFines.add(m);
+              }
+            }
           }
-
-          return true;
-        }).toList();
+        }
       }
+
+      setState(() {
+        fines = allFines;
+      });
     } catch (e) {
       setState(() {
         errorMessage = "Error: ${_handleError(e)}";
@@ -205,28 +209,54 @@ class _FinesIssuedPageState extends State<FinesIssuedPage> {
                   final fine = fines[index];
                   final date = DateTime.tryParse(fine['date'] ?? '') ?? DateTime.now();
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      leading: const Icon(Icons.receipt_long, size: 28),
-                      title: Text(
-                        fine['plate'] ?? 'UNKNOWN',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.receipt_long, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  fine['plate'] ?? 'UNKNOWN',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                ),
+                                Text(
+                                  "Date: ${_formatDateTime(date)}",
+                                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "€${(fine['amount'] as num).toStringAsFixed(2)}",
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                fine['paid'] == true ? "Paid" : "Unpaid",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: fine['paid'] == true ? Colors.green : Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      subtitle: Text(
-                        "Date: ${_formatDateTime(date)}",
-                        style: const TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      trailing: Text(
-                        "€${fine['amount']?.toStringAsFixed(2) ?? '--'}",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    )
+                    ),
                   );
                 },
               ),

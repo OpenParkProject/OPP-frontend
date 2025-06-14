@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:openpark/config.dart';
 import '../API/client.dart';
 import 'package:dio/dio.dart';
+import 'dart:io' show Platform;
+import 'card_payment.dart';
+import 'manual_card_form.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+const bool debugCard = false;
 
 class ParkingPaymentPage extends StatelessWidget {
   final int ticketId;
@@ -10,6 +15,8 @@ class ParkingPaymentPage extends StatelessWidget {
   final DateTime startDate;
   final int durationMinutes;
   final double totalCost;
+  final bool allowPayLater;
+  final String? zoneName;
 
   const ParkingPaymentPage({
     required this.ticketId,
@@ -17,8 +24,39 @@ class ParkingPaymentPage extends StatelessWidget {
     required this.startDate,
     required this.durationMinutes,
     required this.totalCost,
+    this.allowPayLater = true,
+    this.zoneName,
     super.key,
   });
+
+  Widget _buildPaymentButton(BuildContext context, String label, IconData icon, Color color, String method) {
+    return ElevatedButton.icon(
+      onPressed: () async {
+        if (method == "Card") {
+          final prefs = await SharedPreferences.getInstance();
+          final isTotem = prefs.getBool("totem_mode") ?? false;
+          final isRfidEnabled = prefs.getBool("rfid") ?? false;
+
+          final bool useRfidFlow = isTotem && isRfidEnabled && (Platform.isLinux || debugCard);
+
+          final page = useRfidFlow
+              ? CardPaymentPage(onConfirmed: () => _payTicket(context, method))
+              : ManualCardFormPage(onConfirmed: () => _payTicket(context, method));
+
+          Navigator.push(context, MaterialPageRoute(builder: (context) => page));
+        } else {
+          _payTicket(context, method);
+        }
+      },
+      icon: Icon(icon),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
 
   Future<void> _payTicket(BuildContext context, String paymentMethod) async {
     try {
@@ -40,12 +78,23 @@ class ParkingPaymentPage extends StatelessWidget {
     }
   }
 
-  void _skipPayment(BuildContext context) {
-    Navigator.popUntil(context, (route) => route.isFirst);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text("⚠️ Ticket created but not paid. It's currently not valid."),
-      backgroundColor: Colors.orange,
-    ));
+  void _skipPayment(BuildContext context) async {
+    try {
+      await DioClient().setAuthToken();
+      await DioClient().dio.delete('/tickets/$ticketId');
+      
+      Navigator.popUntil(context, (route) => route.isFirst);
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("🗑️ Ticket cancelled and deleted."),
+        backgroundColor: Colors.red.shade400,
+      ));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("❌ Failed to delete ticket."),
+        backgroundColor: Colors.red,
+      ));
+    }
   }
 
   @override
@@ -55,7 +104,10 @@ class ParkingPaymentPage extends StatelessWidget {
     final toFormatted = "${DateFormat.Hm().format(endDate)} – ${endDate.day}/${endDate.month}";
 
     return Scaffold(
-      appBar: AppBar(title: Text("Checkout"), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        title: Text("Checkout"),
+        automaticallyImplyLeading: false,
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -68,7 +120,7 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Confirm your parking", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 10),
                 Text("Plate: $plate", style: TextStyle(fontSize: 16)),
-                Text("Zone: Default", style: TextStyle(fontSize: 16)),
+                Text("Zone: ${zoneName ?? 'Unknown'}", style: TextStyle(fontSize: 16)),
                 SizedBox(height: 10),
                 Text("From: $fromFormatted", style: TextStyle(fontSize: 14)),
                 Text("To: $toFormatted", style: TextStyle(fontSize: 14)),
@@ -79,45 +131,62 @@ class ParkingPaymentPage extends StatelessWidget {
                 SizedBox(height: 30),
                 
                 // Payment options section
-                Text("Choose payment method:", 
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                SizedBox(height: 15),
-                
-                // Totem card payment button
-                if (isTotem)
-                ElevatedButton.icon(
-                  onPressed: () => _payTicket(context, "card"),
-                  icon: Icon(Icons.credit_card),
-                  label: Text("Pay with Card"),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 48),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
+                Text("Choose your payment method: "),
+                SizedBox(height: 5),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isWideScreen = constraints.maxWidth > 600;
+                    final buttonWidth = isWideScreen ? 180.0 : double.infinity;
+                    final spacing = isWideScreen ? 12.0 : 8.0;
+
+                    final buttons = [
+                      _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+                      _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
+                      _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
+                      _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
+                    ];
+
+                    if (isWideScreen) {
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        alignment: WrapAlignment.center,
+                        children: buttons
+                            .map((b) => SizedBox(width: buttonWidth, height: 48, child: b))
+                            .toList(),
+                      );
+                    } else {
+                      return Column(
+                        children: buttons
+                            .map((b) => Padding(
+                                  padding: EdgeInsets.symmetric(vertical: spacing / 2),
+                                  child: SizedBox(width: double.infinity, height: 48, child: b),
+                                ))
+                            .toList(),
+                      );
+                    }
+                  },
                 ),
-                SizedBox(height: 12),
-                
-                if (!isTotem) ...[
-                  // PayPal payment button
-                  ElevatedButton.icon(
-                    onPressed: () => _payTicket(context, "PayPal"),
-                    icon: Icon(Icons.payment),
-                    label: Text("Pay with PayPal"),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 48),
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                ],
-                
-                // Pay later option
+
+                SizedBox(height: 15),
                 OutlinedButton.icon(
-                  onPressed: () => _skipPayment(context),
-                  icon: Icon(Icons.access_time),
-                  label: Text("Pay later"),
-                  style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 48)),
+                  onPressed: () {
+                    if (allowPayLater) {
+                      Navigator.popUntil(context, (route) => route.isFirst);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("💤 Ticket created but not paid yet! Remember to pay it to make it valid."),
+                      ));
+                    } else {
+                      _skipPayment(context);
+                    }
+                  },
+                  icon: Icon(allowPayLater ? Icons.access_time : Icons.cancel),
+                  label: Text(allowPayLater ? "Pay later" : "Cancel and delete ticket"),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 48),
+                    foregroundColor: allowPayLater ? null : Colors.red,
+                    side: allowPayLater ? null : BorderSide(color: Colors.red),
+                  ),
                 ),
               ],
             ),
