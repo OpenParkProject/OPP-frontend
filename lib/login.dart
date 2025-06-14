@@ -257,14 +257,17 @@ class _LoginPageState extends State<LoginPage> {
                           children: [
                             GestureDetector(
                               onTap: _triggerTotemMode,
-                              child: const Text(
-                                'OpenPark',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 50,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.blueAccent,
-                                  letterSpacing: 1.5,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: Text(
+                                  'OpenPark',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 50,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.blueAccent,
+                                    letterSpacing: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
