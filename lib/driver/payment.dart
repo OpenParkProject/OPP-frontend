@@ -6,6 +6,7 @@ import 'dart:io' show Platform;
 import 'card_payment.dart';
 import 'manual_card_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 
 const bool debugCard = false;
 
@@ -64,10 +65,19 @@ class ParkingPaymentPage extends StatelessWidget {
       
       await DioClient().dio.post('/tickets/$ticketId/pay');
 
+      final endDate = startDate.add(Duration(minutes: durationMinutes));
+
+      // Cancella eventuali notifiche vecchie
+      await cancelTicketNotifications(id: ticketId);
+
+      // Pianifica nuove notifiche
+      await scheduleTicketNotifications(id: ticketId, end: endDate);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
       );
       Navigator.popUntil(context, (route) => route.isFirst);
+
     } catch (e) {
       String msg = "❌ Payment failed.";
       if (e is DioError && e.response?.data is Map) {

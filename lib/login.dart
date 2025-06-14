@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:openpark/debug/debug.dart';
+import 'package:openpark/debug/debug_mode_selector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'admin/admin_layout.dart';
@@ -237,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: () {
                   Navigator.push(
                     context, 
-                    MaterialPageRoute(builder: (_) => DebugRoleSelector())
+                    MaterialPageRoute(builder: (_) => DebugModeSelector())
                   );
                 },
                 icon: Icon(Icons.bug_report),
@@ -257,6 +257,7 @@ class _LoginPageState extends State<LoginPage> {
             double width = constraints.maxWidth;
 
             return Container(
+              
               width: width < 600 ? width * 0.9 : width * 2 / 3,
               child: Card(
                 color: Colors.white.withAlpha((0.9 * 255).round()),
@@ -265,11 +266,35 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 9.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(height: 20),
+                      Column(
+                        children: [
+                          Text(
+                            'OpenPark',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 50,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.blueAccent,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Container(
+                            height: 3,
+                            width: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.blueAccent,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ],
+                      ),
+                  SizedBox(height: 15),
+                      SizedBox(height: 10),
                       if (totemInfo != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -294,6 +319,78 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
+                        ElevatedButton.icon(
+                        onPressed: () async {
+                          try {
+                            final dio = DioClient().dio;
+
+                            try {
+                              final loginResp = await dio.post('/login', data: {
+                                'username': 'guest',
+                                'password': 'guest123',
+                              });
+                              final token = loginResp.data['access_token'];
+                              final prefs = await SharedPreferences.getInstance();
+                              await prefs.setString('access_token', token);
+                              DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                            } on DioException catch (e) {
+                              if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
+                                await dio.post('/register', data: {
+                                  "name": "Guest",
+                                  "surname": "User",
+                                  "username": "guest",
+                                  "email": "guest@openpark.app",
+                                  "password": "guest123",
+                                  "role": "driver",
+                                });
+                                final loginResp = await dio.post('/login', data: {
+                                  'username': 'guest',
+                                  'password': 'guest123',
+                                });
+                                final token = loginResp.data['access_token'];
+                                final prefs = await SharedPreferences.getInstance();
+                                await prefs.setString('access_token', token);
+                                DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
+                              } else {
+                                throw Exception("Guest login error: ${e.message}");
+                              }
+                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ParkingZoneSelectionPage(fromGuest: true),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Guest login failed: $e")),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 68),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        label: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.directions_car),
+                            SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                "Pay with plate (without login/registration)",
+                                textAlign: TextAlign.center,
+                              )
+                            ),
+                          ],
+                        ),
+                      ),
+                     SizedBox(height: 24),
                       ToggleButtons(
                         borderRadius: BorderRadius.circular(12),
                         isSelected: [!isSignIn, isSignIn],
@@ -398,77 +495,6 @@ class _LoginPageState extends State<LoginPage> {
                           child: Text("Forgot Password?"),
                         ),
                       SizedBox(height: 10),
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            final dio = DioClient().dio;
-
-                            try {
-                              final loginResp = await dio.post('/login', data: {
-                                'username': 'guest',
-                                'password': 'guest123',
-                              });
-                              final token = loginResp.data['access_token'];
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.setString('access_token', token);
-                              DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
-                            } on DioException catch (e) {
-                              if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-                                await dio.post('/register', data: {
-                                  "name": "Guest",
-                                  "surname": "User",
-                                  "username": "guest",
-                                  "email": "guest@openpark.app",
-                                  "password": "guest123",
-                                  "role": "driver",
-                                });
-                                final loginResp = await dio.post('/login', data: {
-                                  'username': 'guest',
-                                  'password': 'guest123',
-                                });
-                                final token = loginResp.data['access_token'];
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.setString('access_token', token);
-                                DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
-                              } else {
-                                throw Exception("Guest login error: ${e.message}");
-                              }
-                            }
-
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ParkingZoneSelectionPage(fromGuest: true),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Guest login failed: $e")),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        label: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.directions_car),
-                            SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                "Pay with plate (without login/registration)",
-                                textAlign: TextAlign.center,
-                              )
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
