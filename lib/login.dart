@@ -259,15 +259,45 @@ class _LoginPageState extends State<LoginPage> {
                               onTap: _triggerTotemMode,
                               child: Material(
                                 color: Colors.transparent,
-                                child: Text(
-                                  'OpenPark',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 50,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.blueAccent,
-                                    letterSpacing: 1.5,
-                                  ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'OpenPark',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 50,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.blueAccent,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if (totemInfo != null && totemInfo!['zoneName'] != null) ...[
+                                      Text(
+                                        "📍 ${totemInfo!['zoneName']} Zone",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.red, // come il pin
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        width: 160,
+                                        height: 2,
+                                        color: Colors.red, // la riga è rossa sotto zona
+                                      ),
+                                    ] else ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        width: 100,
+                                        height: 2,
+                                        color: Colors.blueAccent, // riga blu sotto OpenPark
+                                      ),
+                                    ],
+                                    const SizedBox(height: 12),
+                                  ],
                                 ),
                               ),
                             ),

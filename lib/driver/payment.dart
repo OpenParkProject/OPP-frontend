@@ -6,7 +6,7 @@ import 'dart:io' show Platform;
 import 'card_payment.dart';
 import 'manual_card_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../main.dart';
+import '../notifications.dart';
 
 const bool debugCard = false;
 
@@ -213,3 +213,33 @@ class ParkingPaymentPage extends StatelessWidget {
     );
   }
 }
+
+  Future<void> scheduleTicketNotifications({
+    required int id,
+    required DateTime end,
+  }) async {
+    final reminderTime = end.subtract(Duration(minutes: 9));
+    final afterTime = end.add(Duration(minutes: 5));
+
+    debugPrint('[NOTIF] Ticket $id: will remind at $reminderTime');
+    debugPrint('[NOTIF] Ticket $id: will alert expired at $afterTime');
+
+    await scheduleNotification(
+      id: id * 10 + 1,
+      title: "⏰ Your parking is about to expire",
+      body: "The ticket for your car will expire in 10 minutes.",
+      scheduledDate: reminderTime,
+    );
+
+    await scheduleNotification(
+      id: id * 10 + 2,
+      title: "⚠️ Parking ticket expired",
+      body: "Your ticket has just expired. Renew if needed.",
+      scheduledDate: afterTime,
+    );
+  }
+
+  Future<void> cancelTicketNotifications({required int id}) async {
+    await flutterLocalNotificationsPlugin.cancel(id * 10 + 1);
+    await flutterLocalNotificationsPlugin.cancel(id * 10 + 2);
+  }
