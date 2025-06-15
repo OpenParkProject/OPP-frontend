@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../API/client.dart';
 import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/login_helper.dart';
 
 class AdminAdminManagementPage extends StatefulWidget {
   const AdminAdminManagementPage({super.key});
@@ -186,13 +187,24 @@ class _AdminAdminManagementPageState extends State<AdminAdminManagementPage> {
                                     }).toList(),
                                   ],
                                 ),
-                                trailing: IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => _deleteAdmin(
-                                    admin['id'],
-                                    admin['username'],
-                                    admin['zones'],
-                                  ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.login, color: Colors.green),
+                                      onPressed: () {
+                                        loginAsUser(context, admin['username'], 'admin', authPath: "/users/adminpw");
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteAdmin(
+                                        admin['id'],
+                                        admin['username'],
+                                        admin['zones'],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );

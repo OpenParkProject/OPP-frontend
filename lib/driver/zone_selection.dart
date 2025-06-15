@@ -233,29 +233,39 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
   }
   
   Future<void> getLocationFromIP() async {
+    http.Response? response;
     try {
-      final response = await http.Client().get(Uri.parse('http://ip-api.com/json/'));
-      
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          userLat = data['lat'];
-          userLong = data['lon'];
-        });
-        await _fetchZonesAndCalculateDistances();
-      } else {
-        setState(() {
-          errorMessage = 'Failed to get location from IP';
-          isLoading = false;
-        });
-      }
+      response = await http
+          .get(Uri.parse('https://ipapi.co/json/'))
+          .timeout(const Duration(seconds: 3));
     } catch (e) {
+      debugPrint('Timeout or error fetching IP location: $e – using fallback Torino');
       setState(() {
-        errorMessage = 'Error getting location: $e';
-        isLoading = false;
+        userLat = 45.0703;
+        userLong = 7.6869;
+      });
+      await _fetchZonesAndCalculateDistances();
+      return;
+    }
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        userLat = data['latitude'] ?? 45.0703;
+        userLong = data['longitude'] ?? 7.6869;
+      });
+    } else {
+      debugPrint('Failed to fetch IP location (status ${response.statusCode}), using fallback');
+      setState(() {
+        userLat = 45.0703;
+        userLong = 7.6869;
       });
     }
+
+    await _fetchZonesAndCalculateDistances();
+
   }
+
 
   Future<void> _fetchZonesAndCalculateDistances() async {
     if (userLat == null || userLong == null) {

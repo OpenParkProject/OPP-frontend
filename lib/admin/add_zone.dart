@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
 import '../API/client.dart';
@@ -26,13 +25,10 @@ class _AddZonePageState extends State<AddZonePage> {
 
   // Map drawing variables
   final List<LatLng> _polygonPoints = [];
-  final MapController _mapController = MapController();
-  LatLng _center = LatLng(45.4642, 9.1900); // Default to Milan
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
   }
 
   @override
@@ -44,34 +40,6 @@ class _AddZonePageState extends State<AddZonePage> {
     _maxHoursController.dispose();
     _specialRulesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    // You can reuse the location code from zone_statues.dart
-    // For now, we'll use a default location
-    setState(() {
-      _center = LatLng(45.4642, 9.1900); // Milan coordinates
-    });
-  }
-
-  void _addPoint(LatLng point) {
-    setState(() {
-      _polygonPoints.add(point);
-    });
-  }
-
-  void _clearPoints() {
-    setState(() {
-      _polygonPoints.clear();
-    });
-  }
-
-  void _undoLastPoint() {
-    if (_polygonPoints.isNotEmpty) {
-      setState(() {
-        _polygonPoints.removeLast();
-      });
-    }
   }
 
   String _createGeoJSONPolygon() {

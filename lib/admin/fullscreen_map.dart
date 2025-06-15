@@ -36,7 +36,24 @@ class _FullscreenMapPageState extends State<FullscreenMapPage> {
             permission != LocationPermission.always) return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      } catch (e) {
+        debugPrint("Localization error: $e. Using Torino as fallback.");
+        position = Position(
+          latitude: 45.0703,
+          longitude: 7.6869,
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0
+        );
+      }
       final current = LatLng(position.latitude, position.longitude);
       setState(() => _center = current);
       _mapController.move(current, 14.0);

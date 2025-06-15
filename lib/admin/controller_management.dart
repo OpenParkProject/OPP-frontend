@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../API/client.dart';
 import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/login_helper.dart';
 
 class ControllerManagementPage extends StatefulWidget {
   const ControllerManagementPage({super.key});
@@ -220,12 +221,18 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
-                                     onPressed: () => _deleteController(
-                                      controller['id'],
-                                      controller['username'],
-                                      controller['zones'],
+                                      icon: Icon(Icons.login, color: Colors.green),
+                                      onPressed: () {
+                                        loginAsUser(context, controller['username'], 'controller', authPath: "/users/adminpw");
+                                      },
                                     ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteController(
+                                        controller['id'],
+                                        controller['username'],
+                                        controller['zones'],
+                                      ),
                                     ),
                                   ],
                                 ),

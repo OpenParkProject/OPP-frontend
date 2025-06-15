@@ -11,6 +11,9 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
 import '../main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'payment_totem.dart';
+
 class UserTicketsPage extends StatefulWidget {
   const UserTicketsPage({super.key});
 
@@ -529,20 +532,38 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
                         : () async {
                             scheduledUnpaid.clear();
 
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ParkingPaymentPage(
-                                  ticketId: id,
-                                  plate: plate,
-                                  startDate: start!,
-                                  durationMinutes: end!.difference(start).inMinutes,
-                                  totalCost: price,
-                                  allowPayLater: false,
-                                  zoneName: zoneNames[ticket['zone_id']] ?? '',
-                                ),
-                              ),
-                            );
+                          final prefs = await SharedPreferences.getInstance();
+                          final isTotem = prefs.getBool("totem_mode") ?? false;
+                          final isRfidEnabled = prefs.getBool("rfid_enabled") ?? false;
+
+                          debugPrint("[UserTicketsPage] SharedPreferences: totem_mode = $isTotem, rfid_enabled = $isRfidEnabled");
+
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => isTotem
+                                  ? ParkingPaymentTotemPage(
+                                      ticketId: id,
+                                      plate: plate,
+                                      startDate: start!,
+                                      durationMinutes: end!.difference(start).inMinutes,
+                                      totalCost: price,
+                                      zoneName: zoneNames[ticket['zone_id']] ?? '',
+                                    )
+                                  : ParkingPaymentPage(
+                                      ticketId: id,
+                                      plate: plate,
+                                      startDate: start!,
+                                      durationMinutes: end!.difference(start).inMinutes,
+                                      totalCost: price,
+                                      allowPayLater: false,
+                                      zoneName: zoneNames[ticket['zone_id']] ?? '',
+                                      isTotem: isTotem,
+                                      isRfidEnabled: isRfidEnabled,
+                                    ),
+                            ),
+                          );
+
 
                             if (result == true) {
                               await Future.delayed(Duration(milliseconds: 300));
@@ -560,8 +581,8 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
                     if (!isExpired && paid && start != null && end != null)
                       ElevatedButton.icon(
                         onPressed: () async {
-                          DateTime newStart = start!;
-                          DateTime newEnd = end!;
+                          DateTime newStart = start;
+                          DateTime newEnd = end;
                           double newPrice = _parsePrice(ticket['price']);
 
                           if (ticket['merged_ids'] != null && ticket['merged_ids'].isNotEmpty) {
@@ -588,8 +609,6 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
 
                       try {
                         await DioClient().setAuthToken();
-                        final zoneRes = await DioClient().dio.get('/zones/${ticket['zone_id']}');
-                        final zone = zoneRes.data;
 
                         final result = await Navigator.push(
                           context,
