@@ -184,9 +184,14 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
                             child: ListTile(
                               title: Text(admin['username']),
                               subtitle: Text(_formatSubtitle(admin)),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAdmin(admin['username']),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteAdmin(admin['username']),
+                                  ),
+                                ],
                               ),
                             ),
                           );

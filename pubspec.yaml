@@ -41,6 +41,7 @@ dependencies:
     git:
       url: https://github.com/fluttercommunity/plus_plugins.git
       path: packages/android_intent_plus
+  fl_chart: ^0.64.0
 
 dev_dependencies:
   flutter_test:

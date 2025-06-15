@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../API/client.dart';
 import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'zone_assign.dart';
 
 class ControllerManagementPage extends StatefulWidget {
   const ControllerManagementPage({super.key});
@@ -220,12 +221,29 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
-                                     onPressed: () => _deleteController(
-                                      controller['id'],
-                                      controller['username'],
-                                      controller['zones'],
+                                      icon: Icon(Icons.edit, color: Colors.blue),
+                                      tooltip: "Edit zones",
+                                      onPressed: () async {
+                                        final updated = await showDialog(
+                                          context: context,
+                                          builder: (_) => ZoneEditDialog(
+                                            username: controller['username'],
+                                            role: 'controller',
+                                            currentZoneIds: controller['zones']
+                                                .map<int>((z) => z['zone_id'] as int)
+                                                .toList(),
+                                          ),
+                                        );
+                                        if (updated == true) _fetchControllers();
+                                      },
                                     ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteController(
+                                        controller['id'],
+                                        controller['username'],
+                                        controller['zones'],
+                                      ),
                                     ),
                                   ],
                                 ),

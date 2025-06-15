@@ -23,7 +23,7 @@ class _AdminLayoutState extends State<AdminLayout> {
   final List<String> _titles = [
     "Controllers",
     "Admins",
-    "OTP",
+    "Install Totem",
     "Totems",
     "Zones",
   ];
@@ -79,6 +79,7 @@ class _AdminLayoutState extends State<AdminLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blue,
         title: Text(
           _titles[_selectedIndex],
           style: const TextStyle(fontSize: 18),
