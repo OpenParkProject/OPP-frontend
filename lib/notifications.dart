@@ -10,10 +10,18 @@ Future<void> initNotification() async {
 
   const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
 
-  const InitializationSettings initSettings = InitializationSettings(
+  final WindowsInitializationSettings windowsSettings = WindowsInitializationSettings(
+    appName: 'OpenPark',
+    appUserModelId: 'com.openpark.desktop',
+    guid: 'b9f3d5fc-7585-4b23-ae67-34e26f028e44',
+  );
+
+  final InitializationSettings initSettings = InitializationSettings(
     android: androidSettings,
     iOS: iosSettings,
+    windows: windowsSettings,
   );
+
 
   await flutterLocalNotificationsPlugin.initialize(initSettings);
 }

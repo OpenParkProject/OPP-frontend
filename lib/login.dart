@@ -363,17 +363,6 @@ class _LoginPageState extends State<LoginPage> {
                               label: Text("Pay with plate (without login)"),
                             ),
 
-                            const SizedBox(height: 4),
-                            if (totemInfo != null && totemInfo!['zoneName'] != null)
-                              Text(
-                                "📍 ${totemInfo!['zoneName']} Zone",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.blueGrey.shade700,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
                             const SizedBox(height: 10),
                             TextField(
                               controller: _usernameController,

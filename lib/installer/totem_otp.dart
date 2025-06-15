@@ -117,46 +117,37 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Totem Installation')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Card(
-            elevation: 6,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    "Enter the OTP provided by the admin to begin installation.",
-                    style: TextStyle(fontSize: 16),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _otpController,
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
-                      labelText: "OTP",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _submitOtp,
-                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-                      child: _loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text("OK", style: TextStyle(fontSize: 16)),
-                    ),
-                  ),
-                ],
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              "Enter the OTP provided by the admin to begin installation.",
+              style: TextStyle(fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _otpController,
+              textAlign: TextAlign.center,
+              decoration: const InputDecoration(
+                labelText: "OTP",
+                border: OutlineInputBorder(),
               ),
             ),
-          ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _loading ? null : _submitOtp,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: _loading
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text("OK", style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
       ),
     );
