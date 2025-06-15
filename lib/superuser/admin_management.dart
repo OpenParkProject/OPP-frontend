@@ -49,11 +49,11 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
     }
   }
 
-  Future<void> _deleteAdmin(int id) async {
+  Future<void> _deleteAdmin(String username) async {
     try {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
-      await dio.delete("/users/$id");
+      await dio.delete("/users/$username");
 
       setState(() => feedback = "✅ Admin deleted.");
       _fetchAdmins();
@@ -186,7 +186,7 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
                               subtitle: Text(_formatSubtitle(admin)),
                               trailing: IconButton(
                                 icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAdmin(admin['id']),
+                                onPressed: () => _deleteAdmin(admin['username']),
                               ),
                             ),
                           );

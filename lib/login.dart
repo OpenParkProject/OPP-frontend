@@ -167,10 +167,16 @@ class _LoginPageState extends State<LoginPage> {
       );
     } else if (user['role'] == "admin") {
       final zoneResp = await DioClient().dio.get('/zones/me');
-      final zoneIds = zoneResp.data.map<String>((z) => z['id'].toString()).toList();
-      final zoneNames = zoneResp.data.map<String>((z) => z['name'].toString()).toList();
-      await prefs.setStringList('zone_ids', zoneIds);
-      await prefs.setStringList('zone_names', zoneNames);
+      if (zoneResp.data is List) {
+        final zoneIds = zoneResp.data.map<String>((z) => z['id'].toString()).toList();
+        final zoneNames = zoneResp.data.map<String>((z) => z['name'].toString()).toList();
+        await prefs.setStringList('zone_ids', zoneIds);
+        await prefs.setStringList('zone_names', zoneNames);
+      } else {
+        debugPrint("/zones/me returned null or unexpected format.");
+        await prefs.setStringList('zone_ids', []);
+        await prefs.setStringList('zone_names', []);
+      }
       Navigator.pushReplacement(context, MaterialPageRoute(
         builder: (_) => AdminLayout(username: user['username']),
       ));
@@ -416,16 +422,55 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ],
                             SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: showSignUp ? _handleRegistration : _handleAuth,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(double.infinity, 48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                            if (showSignUp)
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          showSignUp = false;
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[300],
+                                        foregroundColor: Colors.black,
+                                        minimumSize: Size(double.infinity, 48),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: Text("Back to Login"),
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: _handleRegistration,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: Size(double.infinity, 48),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: Text("Create Account"),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              ElevatedButton(
+                                onPressed: _handleAuth,
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: Size(double.infinity, 48),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
+                                child: Text("Sign In/Sign Up"),
                               ),
-                              child: Text(showSignUp ? "Create Account" : "Sign In"),
-                            ),
                             TextButton(
                               onPressed: () {
                                 Navigator.push(

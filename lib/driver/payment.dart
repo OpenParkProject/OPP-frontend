@@ -75,7 +75,7 @@ class ParkingPaymentPage extends StatelessWidget {
       await cancelTicketNotifications(id: ticketId);
 
       // Pianifica nuove notifiche
-      await scheduleTicketNotifications(id: ticketId, end: endDate);
+      await scheduleTicketNotifications(id: ticketId, end: endDate, plate: plate);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
@@ -217,24 +217,27 @@ class ParkingPaymentPage extends StatelessWidget {
   Future<void> scheduleTicketNotifications({
     required int id,
     required DateTime end,
+    required String plate,
   }) async {
     final reminderTime = end.subtract(Duration(minutes: 9));
-    final afterTime = end.add(Duration(minutes: 5));
+    final afterTime = end; // Notifica esattamente alla scadenza
+
+    final timeFormatted = DateFormat.Hm().format(end); // es. "14:45"
 
     debugPrint('[NOTIF] Ticket $id: will remind at $reminderTime');
     debugPrint('[NOTIF] Ticket $id: will alert expired at $afterTime');
 
     await scheduleNotification(
       id: id * 10 + 1,
-      title: "⏰ Your parking is about to expire",
-      body: "The ticket for your car will expire in 10 minutes.",
+      title: "⏰ Ticket for $plate is expiring soon",
+      body: "Your ticket for plate $plate will expire in 10 minutes, at $timeFormatted.",
       scheduledDate: reminderTime,
     );
 
     await scheduleNotification(
       id: id * 10 + 2,
-      title: "⚠️ Parking ticket expired",
-      body: "Your ticket has just expired. Renew if needed.",
+      title: "⚠️ Ticket for $plate expired",
+      body: "The ticket for plate $plate just expired at $timeFormatted.",
       scheduledDate: afterTime,
     );
   }
