@@ -160,7 +160,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> getLocationFromIP() async {
-    final response = await http.get(Uri.parse('http://ip-api.com/json/'));
+    final response = await http.get(Uri.parse('https://ipapi.co/json/'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -171,8 +171,8 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
     } else {
       debugPrint('Failed to get location from IP: ${response.statusCode}');
       setState(() {
-        userLat = 0.0; // Default fallback
-        userLong = 0.0; // Default fallback
+        userLat = 45.0703; // Torino come fallback
+        userLong = 7.6869;
       });
     }
   }
