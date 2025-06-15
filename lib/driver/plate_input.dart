@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'create_ticket.dart';
 import '../API/client.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'zone_selection.dart'; // Per ParkingZone
+import 'zone_selection.dart';
 
 class SimplePlateInputPage extends StatefulWidget {
   const SimplePlateInputPage({super.key});

@@ -1,4 +1,4 @@
-const bool debugMode = true;
+const bool debugMode = false;
 var globalRole = 'driver';
 const readerWsUrl = 'ws://localhost:10010';
 const String disableTotemOtp = "DISABLE";

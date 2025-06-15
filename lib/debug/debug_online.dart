@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../API/client.dart';
@@ -6,7 +5,6 @@ import '../login.dart';
 import '../driver/driver_layout.dart';
 import '../controller/controller_layout.dart';
 import '../admin/admin_layout.dart';
-import '../main.dart';
 import '../notifications.dart';
 
 class DebugRoleSelectorOnline extends StatelessWidget {

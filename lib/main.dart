@@ -9,7 +9,6 @@ import 'controller/issue_fine.dart';
 import 'installer/totem_otp.dart';
 import 'utils/totem_config_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter/services.dart';
 import 'notifications.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();

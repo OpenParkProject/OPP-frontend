@@ -581,8 +581,8 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
                     if (!isExpired && paid && start != null && end != null)
                       ElevatedButton.icon(
                         onPressed: () async {
-                          DateTime newStart = start!;
-                          DateTime newEnd = end!;
+                          DateTime newStart = start;
+                          DateTime newEnd = end;
                           double newPrice = _parsePrice(ticket['price']);
 
                           if (ticket['merged_ids'] != null && ticket['merged_ids'].isNotEmpty) {
@@ -609,8 +609,6 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
 
                       try {
                         await DioClient().setAuthToken();
-                        final zoneRes = await DioClient().dio.get('/zones/${ticket['zone_id']}');
-                        final zone = zoneRes.data;
 
                         final result = await Navigator.push(
                           context,

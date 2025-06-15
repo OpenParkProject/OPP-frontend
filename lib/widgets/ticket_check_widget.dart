@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:dio/dio.dart';
 import '../API/client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../controller/issue_fine.dart';
 
 class TicketCheckWidget extends StatefulWidget {
   final String plate;
