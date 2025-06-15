@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:openpark/config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_platform/universal_platform.dart';
-
 import '../admin/admin_layout.dart';
 import '../login.dart';
-import 'chalked_cars.dart';
 import 'fines_issued.dart';
 import 'manual_check.dart';
 import 'ocr.dart';
@@ -80,24 +78,6 @@ class _ControllerLayoutState extends State<ControllerLayout> {
       MaterialPageRoute(builder: (_) => LoginPage()),
       (route) => false,
     );
-  }
-
-  void _handleAdminAccess() {
-    if (globalRole == 'admin') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const AdminLayout(username: 'debug_admin'),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Access denied: You are not an admin.'),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    }
   }
 
   @override

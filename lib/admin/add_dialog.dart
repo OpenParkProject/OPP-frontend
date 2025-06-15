@@ -144,6 +144,7 @@ class _AddEditDialogState extends State<AddEditDialog> {
           await dio.post("/register", data: data);
           widget.onCredentialsSaved?.call(username, password);
         } on DioException catch (e) {
+          debugPrint('$e');
           setState(() => error = "❌ Failed to create user.");
           await Future.delayed(Duration(seconds: 2));
           setState(() => loading = false);

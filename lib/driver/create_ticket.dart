@@ -20,7 +20,6 @@ class SelectDurationPage extends StatefulWidget {
 
 class _SelectDurationPageState extends State<SelectDurationPage> {
   int _durationMinutes = 60;
-  bool _isHolding = false;
   bool _startNow = true;
 
   final int _minMinutes = 10;
@@ -33,27 +32,10 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
     return z.priceOffset + pow(z.priceLin * t, z.priceExp);
   }
 
-
-
   void _changeDuration(int delta) {
     setState(() {
       _durationMinutes = (_durationMinutes + delta).clamp(_minMinutes, _maxMinutes);
     });
-  }
-
-  void _startHold(int delta) {
-    _isHolding = true;
-    _changeDuration(delta);
-    Future.doWhile(() async {
-      await Future.delayed(Duration(milliseconds: 100));
-      if (!_isHolding) return false;
-      _changeDuration(delta);
-      return true;
-    });
-  }
-
-  void _stopHold() {
-    _isHolding = false;
   }
 
   Future<void> _pickDateTime() async {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../API/client.dart';
 import 'card_payment.dart';
@@ -28,7 +27,6 @@ class ParkingPaymentTotemPage extends StatelessWidget {
     try {
       await DioClient().setAuthToken();
       await DioClient().dio.post('/tickets/$ticketId/pay');
-      final endDate = startDate.add(Duration(minutes: durationMinutes));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully"))
       );
