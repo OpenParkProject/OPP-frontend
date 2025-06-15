@@ -7,6 +7,7 @@ import 'package:openpark/admin/add_zone.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'zone_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class ParkingZone {
   final String name;
@@ -130,6 +131,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> _determinePosition() async {
+    debugPrint("Determining position");
     if (UniversalPlatform.isLinux || UniversalPlatform.isWeb || UniversalPlatform.isWindows) {
       await getLocationFromIP();
     } else if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
@@ -160,24 +162,44 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> getLocationFromIP() async {
-    final response = await http.get(Uri.parse('https://ipapi.co/json/'));
+    http.Response? response;
+    try {
+      response = await http
+          .get(Uri.parse('https://ipapi.co/json/'))
+          .timeout(const Duration(seconds: 3));
+    } on TimeoutException catch (_) {
+      debugPrint('Timeout IP location – using fallback Torino');
+      setState(() {
+        userLat = 45.0703;
+        userLong = 7.6869;
+      });
+      return;
+    } catch (e) {
+      debugPrint('Error fetching IP location: $e');
+      setState(() {
+        userLat = 45.0703;
+        userLong = 7.6869;
+      });
+      return;
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
-        userLat = data['lat'];
-        userLong = data['lon'];
+        userLat = data['latitude'] ?? 45.0703;
+        userLong = data['longitude'] ?? 7.6869;
       });
     } else {
-      debugPrint('Failed to get location from IP: ${response.statusCode}');
+      debugPrint('Failed to get location – fallback Torino');
       setState(() {
-        userLat = 45.0703; // Torino come fallback
+        userLat = 45.0703;
         userLong = 7.6869;
       });
     }
   }
 
   Future<void> _fetchZonesAndCalculateDistances() async {
+    debugPrint("Fetching zones and calculating distances...");
     if (userLat == null || userLong == null) {
       debugPrint('Cannot calculate distances: coordinates not available yet');
       return;

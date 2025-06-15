@@ -65,25 +65,29 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
   }
 
   Future<void> _fetchLocationFromIP() async {
+    http.Response? res;
     try {
-      final res = await http.get(Uri.parse('https://ipapi.co/json/')); // HTTPS
-
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        setState(() {
-          _currentLocation = LatLng(
-            (data['latitude'] ?? 45.0703).toDouble(),
-            (data['longitude'] ?? 7.6869).toDouble(),
-          );
-        });
-      } else {
-        debugPrint('Failed to fetch IP location (status ${res.statusCode}), using fallback');
-        setState(() {
-          _currentLocation = LatLng(45.0703, 7.6869);
-        });
-      }
+      res = await http
+          .get(Uri.parse('https://ipapi.co/json/'))
+          .timeout(const Duration(seconds: 3));
     } catch (e) {
-      debugPrint('Error fetching IP location: $e – using fallback Torino');
+      debugPrint('Timeout or error fetching IP location: $e – fallback Torino');
+      setState(() {
+        _currentLocation = LatLng(45.0703, 7.6869);
+      });
+      return;
+    }
+
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      setState(() {
+        _currentLocation = LatLng(
+          (data['latitude'] ?? 45.0703).toDouble(),
+          (data['longitude'] ?? 7.6869).toDouble(),
+        );
+      });
+    } else {
+      debugPrint('Failed to fetch IP location (status ${res.statusCode}), using fallback');
       setState(() {
         _currentLocation = LatLng(45.0703, 7.6869);
       });

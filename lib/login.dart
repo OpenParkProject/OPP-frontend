@@ -181,11 +181,19 @@ class _LoginPageState extends State<LoginPage> {
         builder: (_) => AdminLayout(username: user['username']),
       ));
     } else if (user['role'] == "controller") {
-      final zoneResp = await DioClient().dio.get('/zones/me');
+    final zoneResp = await DioClient().dio.get('/zones/me');
+
+    if (zoneResp.data is List) {
       final zoneIds = zoneResp.data.map<String>((z) => z['id'].toString()).toList();
       final zoneNames = zoneResp.data.map<String>((z) => z['name'].toString()).toList();
       await prefs.setStringList('zone_ids', zoneIds);
       await prefs.setStringList('zone_names', zoneNames);
+    } else {
+      debugPrint("/zones/me returned null or unexpected format.");
+      await prefs.setStringList('zone_ids', []);
+      await prefs.setStringList('zone_names', []);
+    }
+
       Navigator.pushReplacement(context, MaterialPageRoute(
         builder: (_) => ControllerLayout(username: user['username']),
       ));

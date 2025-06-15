@@ -84,12 +84,19 @@ class _TotemOtpPageState extends State<TotemOtpPage> {
     try {
       final dio = DioClient().dio;
 
-      final zonesRes = await dio.get('/zones/me/$otp');
-      final List<dynamic> zones = zonesRes.data;
+    final zonesRes = await dio.get('/zones/me/$otp');
+    List<dynamic> zones;
 
-      if (zones.isEmpty) {
-        throw Exception("No zones available for this OTP.");
-      }
+    if (zonesRes.data is List) {
+      zones = zonesRes.data;
+    } else {
+      debugPrint("/zones/me returned null or unexpected format.");
+      zones = [];
+    }
+
+    if (zones.isEmpty) {
+      throw Exception("No zones available for this OTP.");
+    }
 
       if (mounted) {
         Navigator.push(

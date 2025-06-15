@@ -3,6 +3,7 @@ import '../API/client.dart';
 import '../admin/add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../admin/admin_layout.dart';
+import '../utils/login_helper.dart';
 
 class SuperuserAdminManagementPage extends StatefulWidget {
   final String username;
@@ -184,9 +185,19 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
                             child: ListTile(
                               title: Text(admin['username']),
                               subtitle: Text(_formatSubtitle(admin)),
-                              trailing: IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteAdmin(admin['username']),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.login, color: Colors.blue),
+                                    tooltip: 'Login as',
+                                    onPressed: () => loginAsUser(context, admin['username'], 'admin'),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => _deleteAdmin(admin['username']),
+                                  ),
+                                ],
                               ),
                             ),
                           );

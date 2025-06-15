@@ -81,6 +81,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blue,
         toolbarHeight: 60,
         title: LayoutBuilder(
           builder: (context, constraints) {
