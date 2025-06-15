@@ -16,6 +16,8 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
   List<Map<String, dynamic>> admins = [];
   bool loading = true;
   String? feedback;
+  String? _tempUsername;
+  String? _tempPassword;
 
   @override
   void initState() {
@@ -63,55 +65,76 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
   void _openAddAdminDialog() async {
     final created = await showDialog(
       context: context,
-      builder: (_) => AddEditDialog(role: 'admin', noZoneAssignment: true),
-    );
-    if (created == true) _fetchAdmins();
-  }
-
-  Future<void> _loginAsAdmin(String username) async {
-    final confirmed = await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text("Login as $username?"),
-        content: Text("You will log out as superuser and enter the admin interface."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Login")),
-        ],
+      builder: (_) => AddEditDialog(
+        role: 'admin',
+        noZoneAssignment: true,
+        onCredentialsSaved: (username, password) {
+          _tempUsername = username;
+          _tempPassword = password;
+        },
       ),
     );
 
-    if (confirmed != true) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedPassword = prefs.getString("admin_pw_$username");
-
-      if (savedPassword == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("No saved password for $username")),
+    if (created == true) {
+      await _fetchAdmins();
+      if (_tempUsername != null && _tempPassword != null) {
+        final loginNow = await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Login as $_tempUsername?"),
+            content: Text("Do you want to log in immediately as the new admin?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: Text("No")),
+              TextButton(onPressed: () => Navigator.pop(context, true), child: Text("Yes")),
+            ],
+          ),
         );
-        return;
-      }
 
+        if (loginNow == true) {
+          _loginAsNewAdmin(_tempUsername!, _tempPassword!);
+        }
+
+        // Pulisce le credenziali temporanee
+        _tempUsername = null;
+        _tempPassword = null;
+      }
+    }
+  }
+
+  Future<void> _loginAsNewAdmin(String username, String password) async {
+    try {
       final dio = DioClient().dio;
       final response = await dio.post('/login', data: {
         'username': username,
-        'password': savedPassword,
+        'password': password,
       });
 
       final token = response.data['access_token'];
+      final prefs = await SharedPreferences.getInstance();
       await prefs.setString('access_token', token);
       DioClient().dio.options.headers['Authorization'] = 'Bearer $token';
 
-      // Recupera le zone
-      final zonesResponse = await dio.get('/zones/me');
-      final zoneList = zonesResponse.data as List<dynamic>;
-      final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
-      final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+      try {
+        final zonesResponse = await dio.get('/zones/me');
+        final zoneListRaw = zonesResponse.data;
 
-      await prefs.setStringList('zone_ids', zoneIds);
-      await prefs.setStringList('zone_names', zoneNames);
+        if (zoneListRaw is List) {
+          final zoneList = List<Map<String, dynamic>>.from(zoneListRaw);
+          final zoneIds = zoneList.map((z) => z['id'].toString()).toList();
+          final zoneNames = zoneList.map((z) => z['name'].toString()).toList();
+
+          await prefs.setStringList('zone_ids', zoneIds);
+          await prefs.setStringList('zone_names', zoneNames);
+        } else {
+          debugPrint("/zones/me returned null or unexpected format.");
+          await prefs.setStringList('zone_ids', []);
+          await prefs.setStringList('zone_names', []);
+        }
+      } catch (e) {
+        debugPrint("Failed to load /zones/me: $e");
+        await prefs.setStringList('zone_ids', []);
+        await prefs.setStringList('zone_names', []);
+      }
 
       Navigator.pushAndRemoveUntil(
         context,
@@ -119,12 +142,27 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
         (route) => false,
       );
     } catch (e) {
+      debugPrint("Login error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("❌ Login as $username failed")),
       );
     }
   }
 
+  String _formatSubtitle(Map<String, dynamic> admin) {
+    final email = admin['email'] ?? "";
+    final id = admin['id'] ?? "-";
+
+    final match = RegExp(r'^(\d{13})@').firstMatch(email);
+    if (match != null) {
+      final ts = int.parse(match.group(1)!);
+      final dt = DateTime.fromMillisecondsSinceEpoch(ts);
+      final formatted = "${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}";
+      return "Admin Id :$id – Created on: $formatted";
+    }
+
+    return "#$id";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -137,30 +175,18 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
             child: loading
                 ? Center(child: CircularProgressIndicator())
                 : admins.isEmpty
-                    ? Center(
-                        child: Text("No admins found."),
-                      )
+                    ? Center(child: Text("No admins found."))
                     : ListView.builder(
                         itemCount: admins.length,
                         itemBuilder: (_, index) {
                           final admin = admins[index];
                           return Card(
                             child: ListTile(
-                              title: Text("${admin['username']}"),
-                              subtitle: Text(admin['email'] ?? ""),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: Icon(Icons.login, color: Colors.blue),
-                                    tooltip: "Login as ${admin['username']}",
-                                    onPressed: () => _loginAsAdmin(admin['username']),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () => _deleteAdmin(admin['id']),
-                                  ),
-                                ],
+                              title: Text(admin['username']),
+                              subtitle: Text(_formatSubtitle(admin)),
+                              trailing: IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteAdmin(admin['id']),
                               ),
                             ),
                           );

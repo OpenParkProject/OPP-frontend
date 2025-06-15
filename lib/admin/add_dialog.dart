@@ -14,11 +14,13 @@ class AddEditDialog extends StatefulWidget {
   final Map<String, dynamic>? existing;
   final String role;
   final bool noZoneAssignment;
+  final void Function(String username, String password)? onCredentialsSaved;
 
   const AddEditDialog({
     this.existing,
     required this.role,
     this.noZoneAssignment = false,
+    this.onCredentialsSaved,
     super.key,
   });
 
@@ -29,6 +31,7 @@ class AddEditDialog extends StatefulWidget {
 class _AddEditDialogState extends State<AddEditDialog> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+
   List<Map<String, dynamic>> allZones = [];
   Set<int> selectedZoneIds = {};
   bool loading = false;
@@ -139,8 +142,7 @@ class _AddEditDialogState extends State<AddEditDialog> {
 
         try {
           await dio.post("/register", data: data);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString("admin_pw_$username", password);
+          widget.onCredentialsSaved?.call(username, password);
         } on DioException catch (e) {
           setState(() => error = "❌ Failed to create user.");
           await Future.delayed(Duration(seconds: 2));
