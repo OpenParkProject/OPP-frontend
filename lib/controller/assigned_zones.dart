@@ -33,6 +33,14 @@ class _AssignedZonesPageState extends State<AssignedZonesPage> {
       final prefs = await SharedPreferences.getInstance();
       final ids = prefs.getStringList("zone_ids") ?? [];
 
+      if (ids.isEmpty) {
+        setState(() {
+          error = "❌ No zone permissions found for this user.";
+          loading = false;
+        });
+        return;
+      }
+
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
@@ -50,7 +58,7 @@ class _AssignedZonesPageState extends State<AssignedZonesPage> {
       });
     } catch (e) {
       setState(() {
-        error = "Errore nel caricamento delle zone: $e";
+        error = "Error in loading zones: $e";
         loading = false;
       });
     }

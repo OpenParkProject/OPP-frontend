@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../API/client.dart';
 import 'payment.dart';
-import 'zone_selection.dart';
+import 'payment_totem.dart';
 import 'dart:math';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../admin/zone_status.dart';
 
 class SelectDurationPage extends StatefulWidget {
   final String plate;
@@ -18,7 +20,6 @@ class SelectDurationPage extends StatefulWidget {
 
 class _SelectDurationPageState extends State<SelectDurationPage> {
   int _durationMinutes = 60;
-  bool _isHolding = false;
   bool _startNow = true;
 
   final int _minMinutes = 10;
@@ -31,27 +32,10 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
     return z.priceOffset + pow(z.priceLin * t, z.priceExp);
   }
 
-
-
   void _changeDuration(int delta) {
     setState(() {
       _durationMinutes = (_durationMinutes + delta).clamp(_minMinutes, _maxMinutes);
     });
-  }
-
-  void _startHold(int delta) {
-    _isHolding = true;
-    _changeDuration(delta);
-    Future.doWhile(() async {
-      await Future.delayed(Duration(milliseconds: 100));
-      if (!_isHolding) return false;
-      _changeDuration(delta);
-      return true;
-    });
-  }
-
-  void _stopHold() {
-    _isHolding = false;
   }
 
   Future<void> _pickDateTime() async {
@@ -115,18 +99,35 @@ class _SelectDurationPageState extends State<SelectDurationPage> {
 
       final allowLater = username != "guest";
 
+      final prefs = await SharedPreferences.getInstance();
+      final isTotem = prefs.getBool("isTotem") ?? false;
+      final isRfidEnabled = prefs.getBool("rfid_enabled") ?? false;
+
+      debugPrint("[CreateTicket] SharedPreferences: totem_mode = $isTotem, rfid_enabled = $isRfidEnabled");
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ParkingPaymentPage(
-            ticketId: ticketId,
-            plate: widget.plate,
-            startDate: startDate,
-            durationMinutes: _durationMinutes,
-            totalCost: cost,
-            allowPayLater: allowLater,
-            zoneName: widget.selectedZone.name,
-          ),
+        builder: (_) => isTotem
+            ? ParkingPaymentTotemPage(
+                ticketId: ticketId,
+                plate: widget.plate,
+                startDate: startDate,
+                durationMinutes: _durationMinutes,
+                totalCost: cost,
+                zoneName: widget.selectedZone.name,
+              )
+            : ParkingPaymentPage(
+                ticketId: ticketId,
+                plate: widget.plate,
+                startDate: startDate,
+                durationMinutes: _durationMinutes,
+                totalCost: cost,
+                allowPayLater: allowLater,
+                zoneName: widget.selectedZone.name,
+                isTotem: isTotem,
+                isRfidEnabled: isRfidEnabled,
+              ),
         ),
       );
     } catch (e) {

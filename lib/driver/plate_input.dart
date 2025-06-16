@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'create_ticket.dart';
 import '../API/client.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'zone_selection.dart'; // Per ParkingZone
+import '../admin/zone_status.dart';
 
 class SimplePlateInputPage extends StatefulWidget {
   const SimplePlateInputPage({super.key});
@@ -43,7 +42,7 @@ class _SimplePlateInputPageState extends State<SimplePlateInputPage> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final zoneId = prefs.getInt("selected_zone_id");
+      final zoneId = prefs.getInt("selected_zone_id") ?? prefs.getInt("zone_id");
 
       if (zoneId == null) {
         Navigator.pop(context);

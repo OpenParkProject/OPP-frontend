@@ -14,11 +14,13 @@ class AddEditDialog extends StatefulWidget {
   final Map<String, dynamic>? existing;
   final String role;
   final bool noZoneAssignment;
+  final void Function(String username, String password)? onCredentialsSaved;
 
   const AddEditDialog({
     this.existing,
     required this.role,
     this.noZoneAssignment = false,
+    this.onCredentialsSaved,
     super.key,
   });
 
@@ -29,6 +31,11 @@ class AddEditDialog extends StatefulWidget {
 class _AddEditDialogState extends State<AddEditDialog> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _emailController = TextEditingController();
+
   List<Map<String, dynamic>> allZones = [];
   Set<int> selectedZoneIds = {};
   bool loading = false;
@@ -81,9 +88,32 @@ class _AddEditDialogState extends State<AddEditDialog> {
       setState(() => error = "❗ Username is required.");
       return;
     }
+
     if (!widget.noZoneAssignment && zones.isEmpty) {
       setState(() => error = "❗ Select at least one zone.");
       return;
+    }
+
+    if (widget.role == 'driver') {
+      final name = _nameController.text.trim();
+      final surname = _surnameController.text.trim();
+      final email = _emailController.text.trim();
+      final confirm = _confirmPasswordController.text;
+
+      if ([name, surname, email, confirm].any((e) => e.isEmpty)) {
+        setState(() => error = "❗ Please fill in all fields.");
+        return;
+      }
+
+      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+        setState(() => error = "❗ Invalid email format.");
+        return;
+      }
+
+      if (password != confirm) {
+        setState(() => error = "❗ Passwords do not match.");
+        return;
+      }
     }
 
     setState(() {
@@ -127,21 +157,21 @@ class _AddEditDialogState extends State<AddEditDialog> {
       // Se non esiste, lo creiamo
       if (!userExists) {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final email = "$timestamp@gmail.com";
         final data = {
-          "name": widget.role.capitalize(),
-          "surname": widget.role.capitalize(),
-          "email": email,
+          "name": widget.role == 'driver' ? _nameController.text.trim() : widget.role.capitalize(),
+          "surname": widget.role == 'driver' ? _surnameController.text.trim() : widget.role.capitalize(),
+          "email": widget.role == 'driver' ? _emailController.text.trim() : "$timestamp@gmail.com",
           "username": username,
           "role": widget.role,
           "password": password,
         };
 
+
         try {
           await dio.post("/register", data: data);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString("admin_pw_$username", password);
+          widget.onCredentialsSaved?.call(username, password);
         } on DioException catch (e) {
+          debugPrint('$e');
           setState(() => error = "❌ Failed to create user.");
           await Future.delayed(Duration(seconds: 2));
           setState(() => loading = false);
@@ -203,6 +233,29 @@ class _AddEditDialogState extends State<AddEditDialog> {
                 decoration: InputDecoration(labelText: "Password"),
                 obscureText: true,
               ),
+              if (widget.role == 'driver' && !isEdit) ...[
+                SizedBox(height: 10),
+                TextField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(labelText: "Confirm Password"),
+                  obscureText: true,
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(labelText: "Name"),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _surnameController,
+                  decoration: InputDecoration(labelText: "Surname"),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(labelText: "Email"),
+                ),
+              ],
             const SizedBox(height: 12),
 
             if (!widget.noZoneAssignment) ...[

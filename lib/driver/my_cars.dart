@@ -3,7 +3,7 @@ import '../API/client.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'create_ticket.dart';
-import 'zone_selection.dart';
+import '../admin/zone_status.dart';
 
 class MyCarsPage extends StatefulWidget {
   final void Function(String)? onPlateSelected;
@@ -117,37 +117,9 @@ class _MyCarsPageState extends State<MyCarsPage> {
     }
   }
 
-  Future<void> _deleteCar(String plate) async {
-    try {
-      await DioClient().setAuthToken();
-      await DioClient().dio.delete("/users/me/cars/$plate");
-
-      setState(() => _feedbackMessage = "✅ Vehicle $plate deleted.");
-      await _fetchPlates();
-    } catch (e) {
-      setState(() => _feedbackMessage = "❌ Failed to delete $plate");
-    }
-  }
-
-  Future<void> _editCar(String oldPlate, String brand, String model) async {
-    try {
-      await DioClient().setAuthToken();
-      await DioClient().dio.patch("/users/me/cars/$oldPlate", data: {
-        "plate": oldPlate,
-        "brand": brand,
-        "model": model,
-      });
-
-      setState(() => _feedbackMessage = "✅ $oldPlate updated.");
-      await _fetchPlates();
-    } catch (e) {
-      setState(() => _feedbackMessage = "❌ Failed to update $oldPlate");
-    }
-  }
-
   Future<void> _handlePlateSelection(String plate) async {
     final prefs = await SharedPreferences.getInstance();
-    final zoneId = prefs.getInt("selected_zone_id");
+    final zoneId = prefs.getInt("selected_zone_id") ?? prefs.getInt("zone_id");
 
     if (zoneId == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No zone selected.")));

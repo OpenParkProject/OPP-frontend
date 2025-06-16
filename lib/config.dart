@@ -1,4 +1,7 @@
 const bool debugMode = false;
-var globalRole = 'driver'; // Default role, can be changed in debug mode
+var globalRole = 'driver';
 const readerWsUrl = 'ws://localhost:10010';
-const String disableTotemOtp = "DISABLE-TOTEM";
+const String disableTotemOtp = "DISABLE";
+const totemTestOtpRfidOn = "TEST_RFID";
+const totemTestOtpRfidOff = "TEST";
+const String totemSecret = "0";

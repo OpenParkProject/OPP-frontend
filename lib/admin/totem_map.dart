@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -34,35 +33,61 @@ class _TotemMapAdminPageState extends State<TotemMapAdminPage> {
       final dio = DioClient().dio;
 
       final response = await dio.get('/totems');
-      final allTotems = List<Map<String, dynamic>>.from(response.data);
+      final rawData = response.data;
 
-      final filteredTotems = allTotems.where((t) =>
-        zoneIds.contains(t['zone_id'].toString())
-      ).toList();
+      // ✅ Safe handling of null or unexpected formats
+      if (rawData == null) {
+        setState(() {
+          _totems = []; // just to be safe
+          loading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No totems available.")),
+        );
+        return;
+      }
 
-      setState(() {
-        _totems = filteredTotems;
-        loading = false;
-      });
-    } catch (e) {
+      if (rawData is List) {
+        final allTotems = List<Map<String, dynamic>>.from(rawData);
+        final filteredTotems = allTotems.where((t) =>
+          zoneIds.contains(t['zone_id'].toString())
+        ).toList();
+
+        setState(() {
+          _totems = filteredTotems;
+          loading = false;
+        });
+      } else {
+        throw Exception("Invalid totem response format: expected List or null");
+      }
+    } catch (e, stacktrace) {
       setState(() => loading = false);
+      debugPrint('Totem loading error: $e\n$stacktrace');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to load totems: $e")),
+        SnackBar(content: Text("Failed to load totems: ${e.toString()}")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final defaultCenter = LatLng(45.06, 7.66);
+    final firstValidTotem = _totems.firstWhere(
+      (t) => t['latitude'] != null && t['longitude'] != null,
+      orElse: () => {},
+    );
+
+    final initialCenter = (firstValidTotem.isNotEmpty)
+        ? LatLng(firstValidTotem['latitude'], firstValidTotem['longitude'])
+        : defaultCenter;
+
     return Scaffold(
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : FlutterMap(
               mapController: _mapController,
               options: MapOptions(
-                center: _totems.isNotEmpty
-                    ? LatLng(_totems.first['latitude'], _totems.first['longitude'])
-                    : LatLng(45.06, 7.66),
+                center: initialCenter,
                 zoom: 14,
               ),
               children: [
@@ -73,6 +98,7 @@ class _TotemMapAdminPageState extends State<TotemMapAdminPage> {
                 ),
                 MarkerLayer(
                   markers: _totems
+                      .where((t) => t['latitude'] != null && t['longitude'] != null)
                       .map(
                         (totem) => Marker(
                           point: LatLng(totem['latitude'], totem['longitude']),

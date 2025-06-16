@@ -6,6 +6,7 @@ import 'dart:io' show Platform;
 import 'card_payment.dart';
 import 'manual_card_form.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../notifications.dart';
 
 const bool debugCard = false;
 
@@ -17,6 +18,8 @@ class ParkingPaymentPage extends StatelessWidget {
   final double totalCost;
   final bool allowPayLater;
   final String? zoneName;
+  final bool isTotem;
+  final bool isRfidEnabled;
 
   const ParkingPaymentPage({
     required this.ticketId,
@@ -26,6 +29,8 @@ class ParkingPaymentPage extends StatelessWidget {
     required this.totalCost,
     this.allowPayLater = true,
     this.zoneName,
+    required this.isTotem,
+    required this.isRfidEnabled,
     super.key,
   });
 
@@ -64,10 +69,19 @@ class ParkingPaymentPage extends StatelessWidget {
       
       await DioClient().dio.post('/tickets/$ticketId/pay');
 
+      final endDate = startDate.add(Duration(minutes: durationMinutes));
+
+      // Cancella eventuali notifiche vecchie
+      await cancelTicketNotifications(id: ticketId);
+
+      // Pianifica nuove notifiche
+      await scheduleTicketNotifications(id: ticketId, end: endDate, plate: plate);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("✅ Ticket paid successfully with $paymentMethod"))
       );
       Navigator.popUntil(context, (route) => route.isFirst);
+
     } catch (e) {
       String msg = "❌ Payment failed.";
       if (e is DioError && e.response?.data is Map) {
@@ -99,6 +113,19 @@ class ParkingPaymentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final useRfidFlow = isTotem && isRfidEnabled && (Platform.isLinux || debugCard);
+
+    final buttons = useRfidFlow
+        ? [
+            _buildPaymentButton(context, "Pay by Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+          ]
+        : [
+            _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
+            _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
+            _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
+            _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
+          ];
+
     final endDate = startDate.add(Duration(minutes: durationMinutes));
     final fromFormatted = "${DateFormat.Hm().format(startDate)} – ${startDate.day}/${startDate.month}";
     final toFormatted = "${DateFormat.Hm().format(endDate)} – ${endDate.day}/${endDate.month}";
@@ -129,8 +156,6 @@ class ParkingPaymentPage extends StatelessWidget {
                 Text("Total: €${totalCost.toStringAsFixed(2)}",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                 SizedBox(height: 30),
-                
-                // Payment options section
                 Text("Choose your payment method: "),
                 SizedBox(height: 5),
                 LayoutBuilder(
@@ -138,13 +163,6 @@ class ParkingPaymentPage extends StatelessWidget {
                     final isWideScreen = constraints.maxWidth > 600;
                     final buttonWidth = isWideScreen ? 180.0 : double.infinity;
                     final spacing = isWideScreen ? 12.0 : 8.0;
-
-                    final buttons = [
-                      _buildPaymentButton(context, "Card", Icons.credit_card, Theme.of(context).colorScheme.primary, "Card"),
-                      _buildPaymentButton(context, "Google Pay", Icons.android, Colors.black, "Google Pay"),
-                      _buildPaymentButton(context, "Apple Pay", Icons.apple, Colors.black, "Apple Pay"),
-                      _buildPaymentButton(context, "Satispay", Icons.qr_code, Colors.red, "Satispay"),
-                    ];
 
                     if (isWideScreen) {
                       return Wrap(
@@ -167,7 +185,6 @@ class ParkingPaymentPage extends StatelessWidget {
                     }
                   },
                 ),
-
                 SizedBox(height: 15),
                 OutlinedButton.icon(
                   onPressed: () {
@@ -196,3 +213,36 @@ class ParkingPaymentPage extends StatelessWidget {
     );
   }
 }
+
+  Future<void> scheduleTicketNotifications({
+    required int id,
+    required DateTime end,
+    required String plate,
+  }) async {
+    final reminderTime = end.subtract(Duration(minutes: 9));
+    final afterTime = end; // Notifica esattamente alla scadenza
+
+    final timeFormatted = DateFormat.Hm().format(end); // es. "14:45"
+
+    debugPrint('[NOTIF] Ticket $id: will remind at $reminderTime');
+    debugPrint('[NOTIF] Ticket $id: will alert expired at $afterTime');
+
+    await scheduleNotification(
+      id: id * 10 + 1,
+      title: "⏰ Ticket for $plate is expiring soon",
+      body: "Your ticket for plate $plate will expire in 10 minutes, at $timeFormatted.",
+      scheduledDate: reminderTime,
+    );
+
+    await scheduleNotification(
+      id: id * 10 + 2,
+      title: "⚠️ Ticket for $plate expired",
+      body: "The ticket for plate $plate just expired at $timeFormatted.",
+      scheduledDate: afterTime,
+    );
+  }
+
+  Future<void> cancelTicketNotifications({required int id}) async {
+    await flutterLocalNotificationsPlugin.cancel(id * 10 + 1);
+    await flutterLocalNotificationsPlugin.cancel(id * 10 + 2);
+  }

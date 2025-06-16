@@ -7,6 +7,9 @@ import 'package:openpark/admin/add_zone.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'zone_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
+import 'zones_map_all.dart';
+import 'package:latlong2/latlong.dart';
 
 class ParkingZone {
   final String name;
@@ -130,6 +133,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> _determinePosition() async {
+    debugPrint("Determining position");
     if (UniversalPlatform.isLinux || UniversalPlatform.isWeb || UniversalPlatform.isWindows) {
       await getLocationFromIP();
     } else if (UniversalPlatform.isAndroid || UniversalPlatform.isIOS) {
@@ -160,24 +164,44 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
   }
 
   Future<void> getLocationFromIP() async {
-    final response = await http.get(Uri.parse('http://ip-api.com/json/'));
+    http.Response? response;
+    try {
+      response = await http
+          .get(Uri.parse('https://ipapi.co/json/'))
+          .timeout(const Duration(seconds: 3));
+    } on TimeoutException catch (_) {
+      debugPrint('Timeout IP location – using fallback Torino');
+      setState(() {
+        userLat = 45.0703;
+        userLong = 7.6869;
+      });
+      return;
+    } catch (e) {
+      debugPrint('Error fetching IP location: $e');
+      setState(() {
+        userLat = 45.0703;
+        userLong = 7.6869;
+      });
+      return;
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
-        userLat = data['lat'];
-        userLong = data['lon'];
+        userLat = data['latitude'] ?? 45.0703;
+        userLong = data['longitude'] ?? 7.6869;
       });
     } else {
-      debugPrint('Failed to get location from IP: ${response.statusCode}');
+      debugPrint('Failed to get location – fallback Torino');
       setState(() {
-        userLat = 0.0; // Default fallback
-        userLong = 0.0; // Default fallback
+        userLat = 45.0703;
+        userLong = 7.6869;
       });
     }
   }
 
   Future<void> _fetchZonesAndCalculateDistances() async {
+    debugPrint("Fetching zones and calculating distances...");
     if (userLat == null || userLong == null) {
       debugPrint('Cannot calculate distances: coordinates not available yet');
       return;
@@ -337,8 +361,34 @@ Widget build(BuildContext context) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("$userLat, $userLong\n"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text("$userLat, $userLong"),
+                              ],
+                            ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.map_outlined),
+                            label: const Text("View all on map", style: TextStyle(fontSize: 12)),
+                            onPressed: () {
+                              final List<ParkingZone> zones = zonesWithDistance.map((z) => z['zone'] as ParkingZone).toList();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AllZonesMapPage(
+                                    zones: zones,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         Text("Available zones (nearest first):",
                             style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),

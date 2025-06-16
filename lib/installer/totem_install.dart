@@ -65,14 +65,32 @@ class _TotemInstallPageState extends State<TotemInstallPage> {
   }
 
   Future<void> _fetchLocationFromIP() async {
+    http.Response? res;
     try {
-      final res = await http.get(Uri.parse('http://ip-api.com/json/'));
+      res = await http
+          .get(Uri.parse('https://ipapi.co/json/'))
+          .timeout(const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('Timeout or error fetching IP location: $e – fallback Torino');
+      setState(() {
+        _currentLocation = LatLng(45.0703, 7.6869);
+      });
+      return;
+    }
+
+    if (res.statusCode == 200) {
       final data = jsonDecode(res.body);
       setState(() {
-        _currentLocation = LatLng(data['lat'], data['lon']);
+        _currentLocation = LatLng(
+          (data['latitude'] ?? 45.0703).toDouble(),
+          (data['longitude'] ?? 7.6869).toDouble(),
+        );
       });
-    } catch (_) {
-      setState(() => _currentLocation = LatLng(45.0, 9.0));
+    } else {
+      debugPrint('Failed to fetch IP location (status ${res.statusCode}), using fallback');
+      setState(() {
+        _currentLocation = LatLng(45.0703, 7.6869);
+      });
     }
   }
 
