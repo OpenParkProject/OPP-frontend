@@ -223,7 +223,7 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
                                     IconButton(
                                       icon: Icon(Icons.login, color: Colors.green),
                                       onPressed: () {
-                                        loginAsUser(context, controller['username'], 'controller', authPath: "/users/adminpw");
+                                        loginAsUser(context, controller['username'], 'controller', authPath: "/users/pw");
                                       },
                                     ),
                                     IconButton(

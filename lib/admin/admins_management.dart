@@ -193,7 +193,7 @@ class _AdminAdminManagementPageState extends State<AdminAdminManagementPage> {
                                     IconButton(
                                       icon: Icon(Icons.login, color: Colors.green),
                                       onPressed: () {
-                                        loginAsUser(context, admin['username'], 'admin', authPath: "/users/adminpw");
+                                        loginAsUser(context, admin['username'], 'admin', authPath: "/users/pw");
                                       },
                                     ),
                                     IconButton(
