@@ -69,51 +69,71 @@ class _TotemMapAdminPageState extends State<TotemMapAdminPage> {
     }
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     final defaultCenter = LatLng(45.06, 7.66);
     final firstValidTotem = _totems.firstWhere(
-      (t) => t['latitude'] != null && t['longitude'] != null,
+      (t) => t['latitude'] is num && t['longitude'] is num,
       orElse: () => {},
     );
 
-    final initialCenter = (firstValidTotem.isNotEmpty)
-        ? LatLng(firstValidTotem['latitude'], firstValidTotem['longitude'])
+    final initialCenter = (firstValidTotem.containsKey('latitude') && firstValidTotem.containsKey('longitude'))
+        ? LatLng(
+            (firstValidTotem['latitude'] as num).toDouble(),
+            (firstValidTotem['longitude'] as num).toDouble(),
+          )
         : defaultCenter;
 
+    if (loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_totems.isEmpty) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            "No totems available in your assigned zones.",
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                center: initialCenter,
-                zoom: 14,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.example.app',
+      body: FlutterMap(
+        mapController: _mapController,
+        options: MapOptions(
+          center: initialCenter,
+          zoom: 14,
+        ),
+        children: [
+          TileLayer(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c'],
+            userAgentPackageName: 'com.example.app',
+          ),
+          MarkerLayer(
+            markers: _totems.map((totem) {
+              final lat = totem['latitude'];
+              final lng = totem['longitude'];
+
+              if (lat is! num || lng is! num) return null;
+
+              return Marker(
+                point: LatLng(lat.toDouble(), lng.toDouble()),
+                width: 40,
+                height: 40,
+                child: Tooltip(
+                  message: "Totem: ${totem['id']}",
+                  child: const Icon(Icons.location_on, color: Colors.deepPurple, size: 38),
                 ),
-                MarkerLayer(
-                  markers: _totems
-                      .where((t) => t['latitude'] != null && t['longitude'] != null)
-                      .map(
-                        (totem) => Marker(
-                          point: LatLng(totem['latitude'], totem['longitude']),
-                          width: 40,
-                          height: 40,
-                          child: Tooltip(
-                            message: "Totem: ${totem['id']}",
-                            child: const Icon(Icons.location_on, color: Colors.deepPurple, size: 38),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ],
-            ),
+              );
+            }).whereType<Marker>().toList(),
+          ),
+        ],
+      ),
     );
   }
 }
