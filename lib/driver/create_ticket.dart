@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import '../API/client.dart';
 import 'payment.dart';
 import 'payment_totem.dart';
-import 'zone_selection.dart';
 import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../admin/zone_status.dart';
 
 class SelectDurationPage extends StatefulWidget {
   final String plate;

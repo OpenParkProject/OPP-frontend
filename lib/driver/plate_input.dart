@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'create_ticket.dart';
 import '../API/client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'zone_selection.dart';
+import '../admin/zone_status.dart';
 
 class SimplePlateInputPage extends StatefulWidget {
   const SimplePlateInputPage({super.key});

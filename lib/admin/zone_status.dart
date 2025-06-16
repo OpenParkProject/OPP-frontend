@@ -8,6 +8,8 @@ import 'package:universal_platform/universal_platform.dart';
 import 'zone_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import 'zones_map_all.dart';
+import 'package:latlong2/latlong.dart';
 
 class ParkingZone {
   final String name;
@@ -359,8 +361,34 @@ Widget build(BuildContext context) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("$userLat, $userLong\n"),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
+                                Text("$userLat, $userLong"),
+                              ],
+                            ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.map_outlined),
+                            label: const Text("View all on map", style: TextStyle(fontSize: 12)),
+                            onPressed: () {
+                              final List<ParkingZone> zones = zonesWithDistance.map((z) => z['zone'] as ParkingZone).toList();
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AllZonesMapPage(
+                                    zones: zones,
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         Text("Available zones (nearest first):",
                             style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),

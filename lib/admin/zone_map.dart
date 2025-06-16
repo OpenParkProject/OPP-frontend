@@ -6,8 +6,8 @@ import 'zone_status.dart';
 
 class ZoneMapPage extends StatelessWidget {
   final ParkingZone zone;
-
-  const ZoneMapPage({super.key, required this.zone});
+  final LatLng? userLocation;
+  const ZoneMapPage({super.key, required this.zone, this.userLocation});
 
   List<LatLng> _getPolygonPoints() {
     try {
@@ -38,7 +38,14 @@ class ZoneMapPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final points = _getPolygonPoints();
-    final center = LatLng(zone.latitude ?? 0.0, zone.longitude ?? 0.0);
+
+    // Includi posizione utente nei bounds se presente
+    final allPoints = [
+      ...points,
+      if (userLocation != null) userLocation!,
+    ];
+
+    final bounds = LatLngBounds.fromPoints(allPoints);
 
     return Scaffold(
       appBar: AppBar(
@@ -46,8 +53,11 @@ class ZoneMapPage extends StatelessWidget {
       ),
       body: FlutterMap(
         options: MapOptions(
-          center: center,
-          zoom: 16,
+          bounds: bounds,
+          boundsOptions: const FitBoundsOptions(
+            padding: EdgeInsets.all(50),
+            maxZoom: 17,
+          ),
         ),
         children: [
           TileLayer(
@@ -59,20 +69,68 @@ class ZoneMapPage extends StatelessWidget {
             polygons: [
               Polygon(
                 points: points,
-                borderColor: Colors.blue,
+                borderColor: Colors.blueAccent,
                 borderStrokeWidth: 3,
-                color: Colors.blue.withOpacity(0.2),
+                color: Colors.blue.withOpacity(0.25),
               ),
             ],
           ),
           MarkerLayer(
             markers: [
+              // Marker zona
               Marker(
-                point: center,
-                width: 40,
-                height: 40,
-                child: const Icon(Icons.location_on, color: Colors.red, size: 36),
+                point: LatLng(zone.latitude ?? 0.0, zone.longitude ?? 0.0),
+                width: 180,
+                height: 70,
+                alignment: Alignment.topCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Tooltip(
+                      message: "${zone.name}\n€${zone.priceOffset} + €${zone.priceLin}/h + €${zone.priceExp}exp",
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      textStyle: const TextStyle(color: Colors.white),
+                      child: const Icon(Icons.location_on, color: Colors.red, size: 38),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 4,
+                            offset: Offset(1, 2),
+                          )
+                        ],
+                      ),
+                      child: Text(
+                        zone.name,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+
+              // Marker utente (se presente)
+              if (userLocation != null)
+                Marker(
+                  point: userLocation!,
+                  width: 40,
+                  height: 40,
+                  child: const Icon(Icons.my_location, color: Colors.blue, size: 30),
+                ),
             ],
           ),
         ],

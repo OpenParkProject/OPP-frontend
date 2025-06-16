@@ -3,7 +3,7 @@ import '../API/client.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'create_ticket.dart';
-import 'zone_selection.dart';
+import '../admin/zone_status.dart';
 
 class MyCarsPage extends StatefulWidget {
   final void Function(String)? onPlateSelected;

@@ -8,118 +8,9 @@ import 'plate_input.dart';
 import 'my_cars.dart';
 import 'create_ticket.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class ParkingZone {
-  final String name;
-  final bool available;
-  final String geometry;
-  final Map<String, dynamic> metadata;
-  final double priceOffset;
-  final double priceLin;
-  final double priceExp;
-  final int id;
-  final String createdAt;
-  final String updatedAt;
-
-  // Derived properties
-  double? latitude;
-  double? longitude;
-  
-  ParkingZone({
-    required this.name,
-    required this.available,
-    required this.geometry,
-    required this.metadata,
-    required this.priceOffset,
-    required this.priceLin, 
-    required this.priceExp,
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-  }) {
-    _extractCoordinates();
-  }
-
-  // Extract center coordinates from geometry
-  void _extractCoordinates() {
-    try {
-      final geometryData = jsonDecode(geometry);
-      List<dynamic> coords;
-
-      if (geometryData['type'] == 'Polygon') {
-        coords = geometryData['coordinates'][0];
-      } else if (geometryData['type'] == 'MultiPolygon') {
-        coords = geometryData['coordinates'][0][0];
-      } else {
-        throw FormatException("Unsupported geometry type: ${geometryData['type']}");
-      }
-        
-        // Calculate center point of polygon
-        double sumLat = 0;
-        double sumLng = 0;
-        int numPoints = coords.length - 1; // Last point is same as first in closed polygon
-        
-        for (int i = 0; i < numPoints; i++) {
-          sumLng += coords[i][0];
-          sumLat += coords[i][1];
-        }
-        
-        latitude = sumLat / numPoints;
-        longitude = sumLng / numPoints;
-    } catch (e) {
-      debugPrint('Error parsing geometry: $e');
-      // Default coordinates if parsing fails
-      latitude = 0;
-      longitude = 0;
-    }
-  }
-
-  // Calculate hourly rate based on the pricing formula
-  double get hourlyRate => priceOffset + priceLin;
-
-  factory ParkingZone.fromJson(Map<String, dynamic> json) {
-    return ParkingZone(
-      name: json['name'] as String,
-      available: json['available'] as bool,
-      geometry: json['geometry'] as String,
-      metadata: json['metadata'] as Map<String, dynamic>,
-      priceOffset: (json['price_offset'] as num).toDouble(),
-      priceLin: (json['price_lin'] as num).toDouble(),
-      priceExp: (json['price_exp'] as num).toDouble(),
-      id: json['id'] as int,
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'available': available,
-      'geometry': geometry,
-      'metadata': metadata,
-      'price_offset': priceOffset,
-      'price_lin': priceLin,
-      'price_exp': priceExp,
-      'id': id,
-      'created_at': createdAt,
-      'updated_at': updatedAt,
-    };
-  }
-
-  @override
-  String toString() => 'ParkingZone(name: $name, id: $id)';
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ParkingZone &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
+import '../admin/zone_map.dart';
+import '../admin/zone_status.dart';
+import 'package:latlong2/latlong.dart';
 
 class ParkingZoneSelectionPage extends StatefulWidget {
   final bool fromGuest;
@@ -412,19 +303,29 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: zone.available ? Colors.green : Colors.grey,
-                                        borderRadius: BorderRadius.circular(4),
+                                    TextButton.icon(
+                                      style: TextButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                                        minimumSize: const Size(10, 36),
                                       ),
-                                      child: Text(
-                                        zone.available ? 'Available' : 'Unavailable',
-                                        style: TextStyle(color: Colors.white, fontSize: 12),
-                                      ),
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => ZoneMapPage(
+                                              zone: zone,
+                                              userLocation: userLat != null && userLong != null
+                                                  ? LatLng(userLat!, userLong!)
+                                                  : null,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.map_outlined, size: 18),
+                                      label: const Text("See on Map", style: TextStyle(fontSize: 12)),
                                     ),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward_ios, color: zone.available ? null : Colors.grey),
+                                    const SizedBox(width: 30),
+                                    Icon(Icons.arrow_forward_ios, size: 16, color: zone.available ? null : Colors.grey),
                                   ],
                                 ),
                                 enabled: zone.available,
