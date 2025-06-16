@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../admin/zone_map.dart';
 import '../admin/zone_status.dart';
 import 'package:latlong2/latlong.dart';
+import 'zone_map_selection.dart';
 
 class ParkingZoneSelectionPage extends StatefulWidget {
   final bool fromGuest;
@@ -245,7 +246,28 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                       children: [
                         Text("Your position:", style: TextStyle(fontWeight: FontWeight.bold)),
                         Text("$userLat, $userLong\n"),
-                        Text("Available zones (nearest first):", style: TextStyle(fontWeight: FontWeight.bold)),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => ZoneMapSelectionPage(
+                                fromGuest: widget.fromGuest,
+                                userLocation: userLat != null && userLong != null
+                                  ? LatLng(userLat!, userLong!)
+                                  : null,)),
+                            );
+                          },
+                          icon: const Icon(Icons.map),
+                          label: const Text("Choose on map"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.lightBlueAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                            textStyle: const TextStyle(fontSize: 18),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text("Or from the list:", style: TextStyle(fontWeight: FontWeight.bold)),
                         SizedBox(height: 10),
                         Expanded(
                           child: ListView.builder(
@@ -300,13 +322,16 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                       Text("Max hours: ${zone.metadata['max_hours']}", style: TextStyle(fontSize: 12)),
                                   ],
                                 ),
-                                trailing: Row(
+                                trailing: Column(
                                   mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
+                                    Icon(Icons.arrow_forward_ios, size: 16, color: zone.available ? null : Colors.grey),
+                                    const SizedBox(height: 4),
                                     TextButton.icon(
                                       style: TextButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                                        minimumSize: const Size(10, 36),
+                                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                                        minimumSize: const Size(10, 30),
                                       ),
                                       onPressed: () {
                                         Navigator.push(
@@ -321,11 +346,9 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
                                           ),
                                         );
                                       },
-                                      icon: const Icon(Icons.map_outlined, size: 18),
-                                      label: const Text("See on Map", style: TextStyle(fontSize: 12)),
+                                      icon: const Icon(Icons.map_outlined, size: 16),
+                                      label: const Text("See on Map", style: TextStyle(fontSize: 11)),
                                     ),
-                                    const SizedBox(width: 30),
-                                    Icon(Icons.arrow_forward_ios, size: 16, color: zone.available ? null : Colors.grey),
                                   ],
                                 ),
                                 enabled: zone.available,
