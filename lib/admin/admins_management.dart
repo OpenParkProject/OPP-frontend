@@ -3,6 +3,7 @@ import '../API/client.dart';
 import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/login_helper.dart';
+import 'zone_assign.dart';
 
 class AdminAdminManagementPage extends StatefulWidget {
   const AdminAdminManagementPage({super.key});
@@ -191,9 +192,26 @@ class _AdminAdminManagementPageState extends State<AdminAdminManagementPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
+                                        icon: Icon(Icons.edit, color: Colors.blue),
+                                        tooltip: "Edit zones",
+                                        onPressed: () async {
+                                          final updated = await showDialog(
+                                            context: context,
+                                            builder: (_) => ZoneEditDialog(
+                                              username: admin['username'],
+                                              role: 'admin',
+                                              currentZoneIds: admin['zones']
+                                                  .map<int>((z) => z['zone_id'] as int)
+                                                  .toList(),
+                                            ),
+                                          );
+                                          if (updated == true) _fetchAdmins();
+                                        },
+                                      ),
+                                    IconButton(
                                       icon: Icon(Icons.login, color: Colors.green),
                                       onPressed: () {
-                                        loginAsUser(context, admin['username'], 'admin', authPath: "/users/adminpw");
+                                        loginAsUser(context, admin['username'], 'admin', authPath: "/users/pw");
                                       },
                                     ),
                                     IconButton(

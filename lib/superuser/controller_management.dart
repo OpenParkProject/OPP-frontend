@@ -91,7 +91,7 @@ class _SuperuserControllerManagementPageState extends State<SuperuserControllerM
                                   IconButton(
                                     icon: const Icon(Icons.login, color: Colors.blue),
                                     tooltip: 'Login as',
-                                    onPressed: () => loginAsUser(context, c['username'], 'admin'),
+                                    onPressed: () => loginAsUser(context, c['username'], 'controller'),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.red),

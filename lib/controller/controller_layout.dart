@@ -13,8 +13,9 @@ bool get isOcrSupported =>
 
 class ControllerLayout extends StatefulWidget {
   final String username;
+  final String? successMessage;
 
-  const ControllerLayout({super.key, required this.username});
+  const ControllerLayout({super.key, required this.username, this.successMessage});
 
   @override
   State<ControllerLayout> createState() => _ControllerLayoutState();
@@ -30,6 +31,14 @@ class _ControllerLayoutState extends State<ControllerLayout> {
         isOcrSupported
             ? 0
             : 1; // lands on  "Manual" if OCR is not supported on the device
+
+    if (widget.successMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.successMessage!)),
+        );
+      });
+    }
   }
 
   final List<String> _titles = [

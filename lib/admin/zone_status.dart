@@ -9,7 +9,6 @@ import 'zone_map.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'zones_map_all.dart';
-import 'package:latlong2/latlong.dart';
 
 class ParkingZone {
   final String name;
