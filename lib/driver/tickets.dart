@@ -121,6 +121,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
 
     refreshTimer = Timer.periodic(Duration(seconds: 30), (_) {
       _refreshActiveStatus();
+        super.initState();
     });
   }
 

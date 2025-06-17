@@ -93,7 +93,7 @@ class _SuperuserDriverManagementPageState extends State<SuperuserDriverManagemen
                                   IconButton(
                                     icon: const Icon(Icons.login, color: Colors.blue),
                                     tooltip: 'Login as ${d['username']}',
-                                    onPressed: () => loginAsUser(context, d['username'], 'admin'),
+                                    onPressed: () => loginAsUser(context, d['username'], 'driver'),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.red),

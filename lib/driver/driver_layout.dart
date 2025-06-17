@@ -6,8 +6,9 @@ import 'my_fines.dart';
 
 class MainUserHomePage extends StatefulWidget {
   final String username;
+  final String? successMessage;
 
-  const MainUserHomePage({super.key, required this.username});
+  const MainUserHomePage({super.key, required this.username, this.successMessage});
 
   @override
   State<MainUserHomePage> createState() => _MainUserHomePageState();
@@ -27,6 +28,13 @@ class _MainUserHomePageState extends State<MainUserHomePage> {
       MyFinesPage(),
       ProfilePage(),
     ];
+    if (widget.successMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.successMessage!)),
+        );
+      });
+    }
   }
 
   @override

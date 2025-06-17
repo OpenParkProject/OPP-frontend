@@ -10,14 +10,27 @@ import '../login.dart';
 
 class AdminLayout extends StatefulWidget {
   final String username;
+  final String? successMessage;
 
-  const AdminLayout({super.key, required this.username});
+    const AdminLayout({super.key, required this.username, this.successMessage});
 
   @override
   State<AdminLayout> createState() => _AdminLayoutState();
 }
 
 class _AdminLayoutState extends State<AdminLayout> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.successMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(widget.successMessage!)),
+        );
+      });
+    }
+  }
+
   int _selectedIndex = 0;
 
   final List<String> _titles = [

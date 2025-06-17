@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../API/client.dart';
 import '../admin/admin_layout.dart';
 import '../controller/controller_layout.dart';
-import '../driver/tickets.dart';
+import '../driver/driver_layout.dart';
 
 Future<void> loginAsUser(
   BuildContext context,
@@ -12,6 +12,7 @@ Future<void> loginAsUser(
   String authPath = "/users/pw", // default = superuser
 }) async {
   try {
+    final successMessage = "✅ Successfully logged in as $username ($role)";
     final dio = DioClient().dio;
     final response = await dio.get("$authPath/$username");
     final password = response.data['password'];
@@ -36,7 +37,7 @@ Future<void> loginAsUser(
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => AdminLayout(username: username)),
+        MaterialPageRoute(builder: (_) => AdminLayout(username: username, successMessage: successMessage)),
         (r) => false,
       );
     } else if (role == 'controller') {
@@ -49,16 +50,16 @@ Future<void> loginAsUser(
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => ControllerLayout(username: username)),
+        MaterialPageRoute(builder: (_) => ControllerLayout(username: username, successMessage: successMessage)),
         (r) => false,
       );
-    } else {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => UserTicketsPage()),
-        (r) => false,
-      );
-    }
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => MainUserHomePage(username: username, successMessage: successMessage)),
+          (r) => false,
+        );
+      }
   } catch (e) {
     debugPrint("Login as $username failed: $e");
     ScaffoldMessenger.of(context).showSnackBar(
