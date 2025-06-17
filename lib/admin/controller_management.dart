@@ -3,6 +3,7 @@ import '../API/client.dart';
 import 'add_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/login_helper.dart';
+import 'zone_assign.dart';
 
 class ControllerManagementPage extends StatefulWidget {
   const ControllerManagementPage({super.key});
@@ -220,6 +221,23 @@ class _ControllerManagementPageState extends State<ControllerManagementPage> {
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit, color: Colors.blue),
+                                      tooltip: "Edit zones",
+                                      onPressed: () async {
+                                        final updated = await showDialog(
+                                          context: context,
+                                          builder: (_) => ZoneEditDialog(
+                                            username: controller['username'],
+                                            role: 'controller',
+                                            currentZoneIds: controller['zones']
+                                                .map<int>((z) => z['zone_id'] as int)
+                                                .toList(),
+                                          ),
+                                        );
+                                        if (updated == true) _fetchControllers();
+                                      },
+                                    ),
                                     IconButton(
                                       icon: Icon(Icons.login, color: Colors.green),
                                       onPressed: () {

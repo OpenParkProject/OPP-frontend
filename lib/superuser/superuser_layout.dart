@@ -5,6 +5,7 @@ import 'admin_management.dart';
 import 'controller_management.dart';
 import 'driver_management.dart';
 import 'statistics.dart';
+import 'all_zones_map.dart';
 
 class SuperuserLayout extends StatefulWidget {
   final String username;
@@ -27,6 +28,7 @@ class _SuperuserLayoutState extends State<SuperuserLayout> {
       SuperuserAdminManagementPage(username: widget.username),
       SuperuserControllerManagementPage(username: widget.username),
       SuperuserDriverManagementPage(username: widget.username),
+      const SuperuserZonesMapPage(),
       const SuperuserStatisticsPage(),
     ];
 
@@ -34,6 +36,7 @@ class _SuperuserLayoutState extends State<SuperuserLayout> {
       "Admin Users",
       "Controller Users",
       "Driver Users",
+      "Zones",
       "System Statistics",
     ];
   }
@@ -75,6 +78,7 @@ class _SuperuserLayoutState extends State<SuperuserLayout> {
       const Icon(Icons.security),
       const Icon(Icons.supervisor_account),
       const Icon(Icons.person),
+      const Icon(Icons.map),
       const Icon(Icons.bar_chart),
     ];
 
