@@ -88,12 +88,12 @@ class _ZoneMapSelectionPageState extends State<ZoneMapSelectionPage> {
       if (zonePolygon.isNotEmpty) {
         bounds = LatLngBounds(zonePolygon.first, widget.userLocation!);
 
-        // Includi tutti i punti del poligono
+        // Includes all points in the poligon zone
         for (final point in zonePolygon) {
           bounds.extend(point);
         }
 
-        // Includi anche la posizione utente
+        // Includes user's location
         bounds.extend(user);
       }
     }

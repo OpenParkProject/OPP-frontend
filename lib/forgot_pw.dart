@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:openpark/config.dart';           // per totemSecret
-import 'package:openpark/installer/totem_otp.dart'; // per TotemOtpPage
+import 'package:openpark/config.dart';              // totemSecret
+import 'package:openpark/installer/totem_otp.dart'; // TotemOtpPage
 
 
 class ForgotPasswordPage extends StatefulWidget {

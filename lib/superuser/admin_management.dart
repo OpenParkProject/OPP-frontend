@@ -95,7 +95,6 @@ class _SuperuserAdminManagementPageState extends State<SuperuserAdminManagementP
           _loginAsNewAdmin(_tempUsername!, _tempPassword!);
         }
 
-        // Pulisce le credenziali temporanee
         _tempUsername = null;
         _tempPassword = null;
       }

@@ -23,8 +23,6 @@ class ParkingZone {
   final String updatedAt;
   
   String? assignedBy;
-
-  // Derived properties
   double? latitude;
   double? longitude;
   
@@ -232,11 +230,7 @@ class _ParkingZoneStatusPageState extends State<ParkingZoneStatusPage> {
         final res = await dio.get('/zones/$id');
         zones.add(ParkingZone.fromJson(res.data));
       }
-
-      // Solo zone con coordinate valide
       zones = zones.where((z) => z.latitude != null && z.longitude != null).toList();
-
-      // Calcolo distanza e ordinamento
       zonesWithDistance = zones.map((zone) {
         double distanceMeters = Geolocator.distanceBetween(
           userLat!,
@@ -563,6 +557,6 @@ Widget build(BuildContext context) {
                       ],
                     ),
                   ),
-  );
-}
+    );
+  }
 }

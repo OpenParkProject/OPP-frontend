@@ -2,9 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-
-import 'driver/driver_layout.dart'; // o importa la tua pagina tickets
-import 'main.dart'; // per navigatorKey
+import 'driver/driver_layout.dart';
+import 'main.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -43,7 +42,7 @@ Future<void> initNotification() async {
     },
   );
 
-  // 🔊 Registra il canale con suono e vibrazione
+  // Registers channel with sound and vibration
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()

@@ -9,7 +9,7 @@ Future<void> loginAsUser(
   BuildContext context,
   String username,
   String role, {
-  String authPath = "/users/pw", // default = superuser
+  String authPath = "/users/pw",
 }) async {
   try {
     final successMessage = "✅ Successfully logged in as $username ($role)";

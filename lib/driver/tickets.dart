@@ -211,7 +211,7 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
         }
       }
 
-      // ✅ Fonde i ticket consecutivi pagati con stessa targa e zona
+      // Merges exactly consecutive tickets (if same plate and zone)
       final mergedTickets = mergeTickets(toMerge);
       activeTickets = [];
       scheduledPaid = [];
@@ -336,7 +336,6 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
                 }
               }
           } else {
-            // Ticket singolo
             final start = DateTime.tryParse(ticket['start_date'] ?? '')?.toLocal();
             final end = DateTime.tryParse(ticket['end_date'] ?? '')?.toLocal();
             final price = ticket['price']?.toDouble() ?? 0.0;
@@ -345,7 +344,6 @@ class _UserTicketsPageState extends State<UserTicketsPage> with RouteAware {
             }
           }
 
-          // Riepilogo finale
           final globalStart = DateTime.tryParse(ticket['start_date'] ?? '')?.toLocal();
           final globalEnd = DateTime.tryParse(ticket['end_date'] ?? '')?.toLocal();
           double totalPrice;

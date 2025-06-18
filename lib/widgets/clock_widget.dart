@@ -37,7 +37,7 @@ class _ClockWidgetState extends State<ClockWidget> {
   Widget build(BuildContext context) {
     return Text(
       _time,
-      style: TextStyle(fontSize: 16, color: Colors.white),
+      style: TextStyle(fontSize: 16, color: Colors.black),
     );
   }
 }

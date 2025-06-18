@@ -9,20 +9,19 @@ class AllZonesMapPage extends StatelessWidget {
   final List<ParkingZone> zones;
   const AllZonesMapPage({super.key, required this.zones});
 
-  // Colori accesi e distinti
+  // Different colors
   List<Color> _generateZoneColors(int count) {
-    final rand = Random(99); // seme diverso
+    final rand = Random(99);
     return List<Color>.generate(count, (_) {
       final r = rand.nextInt(200) + 30;
       final g = rand.nextInt(200) + 30;
       final b = rand.nextInt(200) + 30;
-      return Color.fromARGB(150, r, g, b); // opacità più alta
+      return Color.fromARGB(150, r, g, b);
     });
   }
 
 @override
 Widget build(BuildContext context) {
-  // Includi tutti i vertici dei poligoni per il calcolo del bounds
   final allPoints = <LatLng>[];
   final zoneColors = _generateZoneColors(zones.length);
 
