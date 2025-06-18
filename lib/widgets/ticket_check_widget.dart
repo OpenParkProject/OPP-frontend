@@ -33,14 +33,14 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
 
   Future<void> _loadAssignedZones() async {
     final prefs = await SharedPreferences.getInstance();
-    final ids = prefs.getStringList("zone_ids"); // corretto nome
+    final ids = prefs.getStringList("zone_ids");
     if (ids != null) {
       assignedZoneIds = ids.map((e) => int.tryParse(e)).whereType<int>().toList();
     }
   }
   
   Future<void> _fetchTickets() async {
-    final plate = widget.plate.toLowerCase(); // confronti case-insensitive
+    final plate = widget.plate.toLowerCase(); // case-insensitive checks
     setState(() {
       _loading = true;
       _errorMessage = null;
@@ -199,7 +199,7 @@ class _TicketCheckWidgetState extends State<TicketCheckWidget> {
 Widget build(BuildContext context) {
   final plate = widget.plate;
 
-  return Expanded( // o direttamente un widget contenitore, se sei in una pagina principale
+  return Expanded(
     child: SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16),

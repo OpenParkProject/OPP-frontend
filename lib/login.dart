@@ -12,7 +12,7 @@ import 'installer/totem_otp.dart';
 import 'dart:io';
 import 'forgot_pw.dart';
 import '/superuser/superuser_layout.dart';
-import 'package:flutter/foundation.dart'; // necessario per kIsWeb
+import 'package:flutter/foundation.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -100,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
       await _handleLoginSuccess(response.data);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401 || e.response?.statusCode == 404) {
-        setState(() => showSignUp = true); // 🔁 mostra il form
+        setState(() => showSignUp = true); // Shows the form
         _showMessage("User not found. Please complete the registration.");
       } else {
         _handleError(e, context: "Login");
@@ -292,7 +292,7 @@ class _LoginPageState extends State<LoginPage> {
                                         style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.red, // come il pin
+                                          color: Colors.red,
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
@@ -300,14 +300,14 @@ class _LoginPageState extends State<LoginPage> {
                                       Container(
                                         width: 160,
                                         height: 2,
-                                        color: Colors.red, // la riga è rossa sotto zona
+                                        color: Colors.red,
                                       ),
                                     ] else ...[
                                       const SizedBox(height: 4),
                                       Container(
                                         width: 100,
                                         height: 2,
-                                        color: Colors.blueAccent, // riga blu sotto OpenPark
+                                        color: Colors.blueAccent,
                                       ),
                                     ],
                                     const SizedBox(height: 12),

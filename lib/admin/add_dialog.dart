@@ -128,7 +128,7 @@ class _AddEditDialogState extends State<AddEditDialog> {
       Map<String, dynamic>? existingUser;
       bool userExists = false;
 
-      // Check se l'utente esiste già
+      // Check if the user already exists
       try {
         final res = await dio.get("/users/$username");
         existingUser = Map<String, dynamic>.from(res.data);
@@ -145,7 +145,7 @@ class _AddEditDialogState extends State<AddEditDialog> {
         }
       } on DioException catch (e) {
         if (e.response?.statusCode == 404) {
-          userExists = false; // utente non trovato: ok, va creato
+          userExists = false; // User not found: proceed to create it
         } else {
           setState(() => error = "❌ Failed to check existing user.");
           await Future.delayed(Duration(seconds: 2));
@@ -154,7 +154,6 @@ class _AddEditDialogState extends State<AddEditDialog> {
         }
       }
 
-      // Se non esiste, lo creiamo
       if (!userExists) {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final data = {
@@ -179,7 +178,6 @@ class _AddEditDialogState extends State<AddEditDialog> {
         }
       }
 
-      // Assegna le zone solo se non già assegnate
       if (!widget.noZoneAssignment) {
         for (final zid in zones) {
           try {

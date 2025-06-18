@@ -36,7 +36,7 @@ class _MyCarsPageState extends State<MyCarsPage> {
       await DioClient().setAuthToken();
       final dio = DioClient().dio;
 
-      // 🔹 1. Fetch plates
+      // 1. Fetch plates
       final carsRes = await dio.get("/users/me/cars");
       final fetchedCars = (carsRes.data as List)
           .map((car) => {
@@ -47,7 +47,7 @@ class _MyCarsPageState extends State<MyCarsPage> {
           .toList();
 
 
-      // 🔹 2. Fetch active tickets (valid_only = true)
+      // 2. Fetch active tickets (valid_only = true)
       final ticketsRes = await dio.get("/users/me/tickets", queryParameters: {
         "valid_only": "true", // <-- must be string!
       });

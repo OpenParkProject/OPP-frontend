@@ -59,7 +59,6 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
         updatedAt: '',
       );
 
-      // recupera username per decidere il flusso
       await DioClient().setAuthToken();
       final response = await DioClient().dio.get("/users/me");
       final username = response.data['username'];
@@ -92,7 +91,7 @@ class _ParkingZoneSelectionPageState extends State<ParkingZoneSelectionPage> {
         );
       }
     } else {
-      _determinePosition(); // comportamento normale
+      _determinePosition();
     }
   }
 

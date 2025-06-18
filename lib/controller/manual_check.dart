@@ -44,7 +44,7 @@ class _ManualCheckPageState extends State<ManualCheckPage> {
                 if (plate.isNotEmpty) {
                   setState(() {
                     currentPlate = plate;
-                    currentKey = ValueKey(plate); // cambia la key ogni volta
+                    currentKey = ValueKey(plate);
                   });
                 }
               },

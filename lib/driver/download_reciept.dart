@@ -36,7 +36,5 @@ Future<void> generateAndDownloadReceipt({
 
   await file.writeAsBytes(await pdf.save());
 
-  // opzionale: apri o stampa direttamente
   await OpenFilex.open(file.path);
-  // oppure usa: await Printing.sharePdf(bytes: await pdf.save(), filename: 'receipt.pdf');
 }

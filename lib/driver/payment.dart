@@ -220,9 +220,8 @@ class ParkingPaymentPage extends StatelessWidget {
     required String plate,
   }) async {
     final reminderTime = end.subtract(Duration(minutes: 9));
-    final afterTime = end; // Notifica esattamente alla scadenza
-
-    final timeFormatted = DateFormat.Hm().format(end); // es. "14:45"
+    final afterTime = end;
+    final timeFormatted = DateFormat.Hm().format(end);
 
     debugPrint('[NOTIF] Ticket $id: will remind at $reminderTime');
     debugPrint('[NOTIF] Ticket $id: will alert expired at $afterTime');
