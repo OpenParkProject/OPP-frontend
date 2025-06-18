@@ -39,7 +39,6 @@ class ZoneMapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final points = _getPolygonPoints();
 
-    // Includi posizione utente nei bounds se presente
     final allPoints = [
       ...points,
       if (userLocation != null) userLocation!,
@@ -77,7 +76,6 @@ class ZoneMapPage extends StatelessWidget {
           ),
           MarkerLayer(
             markers: [
-              // Marker zona
               Marker(
                 point: LatLng(zone.latitude ?? 0.0, zone.longitude ?? 0.0),
                 width: 180,

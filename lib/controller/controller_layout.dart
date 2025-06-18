@@ -174,7 +174,7 @@ class _ControllerLayoutState extends State<ControllerLayout> {
               color:
                   isOcrSupported
                       ? null
-                      : Colors.grey, // disattivato visivamente
+                      : Colors.grey,
             ),
             label: "OCR",
           ),

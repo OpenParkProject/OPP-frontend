@@ -7,7 +7,6 @@ import 'package:timezone/timezone.dart' as tz;
 import 'login.dart';
 import 'controller/issue_fine.dart';
 import 'installer/totem_otp.dart';
-import 'utils/totem_config_manager.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'notifications.dart';
 import 'API/client.dart';
@@ -15,6 +14,7 @@ import 'superuser/superuser_layout.dart';
 import 'admin/admin_layout.dart';
 import 'controller/controller_layout.dart';
 import 'driver/driver_layout.dart';
+import 'utils/totem_inactivity_handler.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -24,7 +24,6 @@ void main() async {
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Europe/Rome'));
 
-  // Richiesta permessi per Android 13+ (API 33+)
   if (UniversalPlatform.isAndroid) {
     final status = await Permission.notification.status;
     await Permission.ignoreBatteryOptimizations.request();
@@ -39,23 +38,21 @@ void main() async {
     }
   }
 
-  // ✅ Inizializzazione notifiche (tutorial-style)
   await initNotification();
 
-  // Carica configurazione minima
-  final config = await TotemConfigManager.loadMinimalConfig();
-  if (config['isTotem'] == true) {
+  final prefs = await SharedPreferences.getInstance();
+  final bool isTotem = prefs.getBool('isTotem') == true;
+  final bool configured = prefs.getInt('zone_id') != null;
+
+  if (isTotem) {
     await clearAllPrefsExceptTotem();
   }
-  final bool isTotem = config['isTotem'] == true;
-  final bool configured = config['zoneId'] != null;
 
   Widget initialWidget;
 
   if (isTotem) {
     initialWidget = configured ? LoginPage() : const TotemOtpPage();
   } else {
-    final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
 
     if (token != null) {
@@ -86,7 +83,7 @@ void main() async {
           initialWidget = MainUserHomePage(username: username);
         }
       } catch (e) {
-        debugPrint('⚠️ Errore validando token: $e');
+        debugPrint('⚠️ Token validation error: $e');
         await prefs.remove('access_token');
         initialWidget = LoginPage();
       }
@@ -95,8 +92,11 @@ void main() async {
     }
   }
 
-
-  runApp(ParkingApp(initialWidget: initialWidget));
+  runApp(
+    GlobalInactivityHandler(
+      child: ParkingApp(initialWidget: initialWidget),
+    ),
+  );
 }
 
 class ParkingApp extends StatelessWidget {

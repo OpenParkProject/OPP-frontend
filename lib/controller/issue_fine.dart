@@ -109,13 +109,11 @@ class _IssueFinePageState extends State<IssueFinePage> {
 
       if (statusCode == 404) {
         try {
-          // Prova a registrare la targa
           await dio.post('/users/me/cars', data: {
             "plate": plate,
             "brand": "Unknown",
             "model": "Unknown",
           });
-          // Riprova la multa
           await _issueFine();
           return;
         } catch (e2) {

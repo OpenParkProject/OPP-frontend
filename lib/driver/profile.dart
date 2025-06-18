@@ -46,7 +46,6 @@ class _ProfilePageState extends State<ProfilePage> {
         numPlates = carRes.data.length;
         numTickets = ticketRes.data.where((t) => t['paid'] == true).length;
 
-        // Precompila modificabili
         newName = name;
         newSurname = surname;
         newUsername = username;

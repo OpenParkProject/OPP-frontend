@@ -119,9 +119,7 @@ Future<void> _loadData() async {
           ),
           MarkerLayer(
             markers: zones.asMap().entries.map((entry) {
-              final index = entry.key;
               final zone = entry.value;
-              final admins = zoneAdmins[zone.id] ?? [];
               final status = zone.available ? "Available" : "Unavailable";
 
               return Marker(

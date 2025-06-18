@@ -90,18 +90,6 @@ class _OTPPageState extends State<OTPPage> {
             onPressed: () {
               final currentOtp = otp ?? "________";
 
-              final fullText = '''
-            Totem mode allows unattended parking payment via card. Once configured, a totem does not ask the user to select a zone and only supports card payments. If RFID is enabled, the totem reads the physical card; otherwise, it asks the user to enter the card details manually.
-
-            Instructions for the installer:
-            - On the totem device, press "Forgot password" on the login screen
-            - Enter 0 (zero) in the email field
-            - Insert the OTP received: $currentOtp
-            - Select the target zone
-            - Confirm the totem location
-            - Choose whether the RFID reader is active
-            ''';
-
               final installerOnly = '''
             Instructions for the installer:
             - On the totem device, press "Forgot password" on the login screen

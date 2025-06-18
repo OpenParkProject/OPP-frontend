@@ -35,10 +35,10 @@ class _TotemMapAdminPageState extends State<TotemMapAdminPage> {
       final response = await dio.get('/totems');
       final rawData = response.data;
 
-      // ✅ Safe handling of null or unexpected formats
+      // Safe handling of null or unexpected formats
       if (rawData == null) {
         setState(() {
-          _totems = []; // just to be safe
+          _totems = [];
           loading = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(

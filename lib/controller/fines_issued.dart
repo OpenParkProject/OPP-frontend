@@ -22,7 +22,7 @@ class _FinesIssuedPageState extends State<FinesIssuedPage> {
   @override
   void initState() {
     super.initState();
-    _fetchFines(); // preload daily fines
+    _fetchFines();
   }
 
   Future<void> _fetchFines() async {
