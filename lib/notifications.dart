@@ -15,6 +15,9 @@ Future<void> initNotification() async {
   const DarwinInitializationSettings iosSettings =
       DarwinInitializationSettings();
 
+  const LinuxInitializationSettings linuxSettings =
+      LinuxInitializationSettings(defaultActionName: 'Open notification');
+
   const WindowsInitializationSettings windowsSettings =
       WindowsInitializationSettings(
     appName: 'OpenPark',
@@ -25,6 +28,7 @@ Future<void> initNotification() async {
   final InitializationSettings initSettings = InitializationSettings(
     android: androidSettings,
     iOS: iosSettings,
+    linux: linuxSettings,
     windows: windowsSettings,
   );
 
