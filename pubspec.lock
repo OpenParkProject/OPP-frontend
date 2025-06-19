@@ -14,7 +14,7 @@ packages:
     description:
       path: "packages/android_intent_plus"
       ref: HEAD
-      resolved-ref: "6ebc0ead68df477f06c6d4738a69a9e56223cf47"
+      resolved-ref: "1b37ba220c99b16693991042c3fcc69eae98864a"
       url: "https://github.com/fluttercommunity/plus_plugins.git"
     source: git
     version: "5.3.0"
@@ -166,10 +166,10 @@ packages:
     dependency: transitive
     description:
       name: device_info_plus_platform_interface
-      sha256: "0b04e02b30791224b31969eb1b50d723498f402971bff3630bca2ba839bd1ed2"
+      sha256: e1ea89119e34903dca74b883d0dd78eb762814f97fb6c76f35e9ff74d261a18f
       url: "https://pub.dev"
     source: hosted
-    version: "7.0.2"
+    version: "7.0.3"
   dio:
     dependency: "direct main"
     description:
@@ -638,7 +638,7 @@ packages:
     description:
       path: "."
       ref: dart-dio-client
-      resolved-ref: d5169e45dba5d7944cd08b34292cad64c9674b1d
+      resolved-ref: "33591428acca95ac78807a572d9a78a7d60640ee"
       url: "https://github.com/OpenParkProject/OPP-common.git"
     source: git
     version: "1.0.0"
@@ -1043,10 +1043,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "329edf97fdd893e0f1e3b9e88d6a0e627128cc17cc316a8d67fda8f1451178ba"
+      sha256: "66814138c3562338d05613a6e368ed8cfb237ad6d64a9e9334be3f309acfca03"
       url: "https://pub.dev"
     source: hosted
-    version: "5.13.0"
+    version: "5.14.0"
   win32_registry:
     dependency: transitive
     description:
@@ -1089,4 +1089,4 @@ packages:
     version: "3.1.3"
 sdks:
   dart: ">=3.8.0 <4.0.0"
-  flutter: ">=3.27.0"
+  flutter: ">=3.29.0"
